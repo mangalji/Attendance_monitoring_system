@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Login</title>
+</head>
+<body>
+    <h1><a href="{% url 'home' %}">Attendance Monitor System</a></h1>
+    <br><br><br>
+    <h1>Manager! please login here</h1>
+    <form action="">
+        <input type="text" placeholder='enter your name here' name='username' required>
+        <br>
+        <input type="password" placeholder='enter your password here' name="password" required>
+    </form>
+    <button><a href="{% url 'manager_login' %}">login</a></button>
+    <button><a href="{% url 'manager_forgot_paswd' %}">forgot password</a></button>
+    <br>
+    <p>if you don't have account please <button><a href="{% url 'manager_signup' %}">click here</a></button></p>
+</body>
+</html>
