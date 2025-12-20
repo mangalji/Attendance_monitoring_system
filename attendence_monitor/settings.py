@@ -54,7 +54,7 @@ ROOT_URLCONF = 'attendence_monitor.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['attendence_monitor/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
