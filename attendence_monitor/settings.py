@@ -76,9 +76,13 @@ DATABASES = {
     'default': {
         # 'ENGINE': 'django.db.backends.sqlite3',
         'ENGINE': 'django.db.backends.mysql',
-        'OPTIONS':{
-            'read_default_file':'/etc/mysql/my.cnf',
-        }
+        # 'OPTIONS':{
+        #     'read_default_file':'/etc/mysql/my.cnf',
+        'NAME':'attendence_monitor_data',
+        'USER':'raj',
+        'PASSWORD':'root',
+        'HOST':'localhost',
+        'PORT' : 3306
     }
 }
 
