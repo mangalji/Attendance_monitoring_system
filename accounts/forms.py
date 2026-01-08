@@ -13,7 +13,7 @@ class StudentProfileForm(forms.ModelForm):
             'address',
             'pincode',
             "dob",
-            'last_qualification'
+            'last_qualification',
             'photo',
         ]
 
