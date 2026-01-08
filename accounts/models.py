@@ -4,8 +4,15 @@ from django.conf import settings
 
 
 class CustomUser(AbstractUser):
+
+    role_choices = (
+        ('student','Student'),
+        ('manager','Manager'),
+    )
+
     username = None
     email = models.EmailField(unique=True)
+    role = models.CharField(max_length=10, choices=role_choices)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -44,7 +51,7 @@ class Student(models.Model):
     joining_date = models.DateField()
     photo = models.ImageField(upload_to='student_photos/',blank=True,null=True)
     is_active = models.BooleanField(default=True)
-    added_by = models.ForeignKey(Manager, on_delete=models.SET_NULL)
+    added_by = models.ForeignKey(Manager, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.roll_no})"
