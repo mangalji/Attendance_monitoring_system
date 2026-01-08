@@ -1,3 +1,2 @@
-.venv/
-attendence_monitor/__pycache__/
-credentials.txt
+.venv
+credentials_admin.txt
