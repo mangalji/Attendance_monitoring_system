@@ -45,7 +45,7 @@ class FeeViewTests(TestCase):
         students = response.context['students']
         # Should be sorted as 1, 2, 10
         roll_nos = [s.roll_no for s in students]
-        self.assertEqual(roll_nos, ['1', '2', '10'])
+        self.assertEqual(roll_nos, [1, 2, 10])
 
     def test_update_fee_and_receipt(self):
         student = StudentProfile.objects.get(roll_no='1')

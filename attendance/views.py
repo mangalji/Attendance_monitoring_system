@@ -113,21 +113,20 @@ def upload_attendance(request):
 @login_required
 @manager_required
 def view_attendance(request):
-    # Defaults
     current_date = datetime.now().date()
     month_str = request.GET.get('month') 
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
     students = list(StudentProfile.objects.all())
     
-    def natural_sort_key(s):
+    def sort_keys(s):
 
         try:
             return int(s.roll_no)
         except ValueError:
             return s.roll_no
 
-    students.sort(key=natural_sort_key)
+    students.sort(key=sort_keys)
     
     show_data = False
     start_date = None
@@ -212,10 +211,10 @@ def download_attendance_report(request):
     end_date_str = request.GET.get('end_date')
 
     students = list(StudentProfile.objects.all())
-    def natural_sort_key(s):
+    def sort_keys(s):
         try: return int(s.roll_no)
         except ValueError: return s.roll_no
-    students.sort(key=natural_sort_key)
+    students.sort(key=sort_keys)
 
     if start_date_str and end_date_str:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
