@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from .models import ManagerProfile, StudentProfile, Parent, Placement,Company
-from .forms import ManagerCretionForm
+from .forms import ManagerCreationForm
 
 @admin.register(ManagerProfile)
 class ManagerAdmin(admin.ModelAdmin):
@@ -10,7 +10,7 @@ class ManagerAdmin(admin.ModelAdmin):
 
     def get_form(self,request,obj=None,**kwargs):
         if obj is None:
-            return ManagerCretionForm
+            return ManagerCreationForm
         return super().get_form(request,obj,**kwargs)
     
 
@@ -23,3 +23,12 @@ class StudentAdmin(admin.ModelAdmin):
 @admin.register(Parent)
 class ParentAdmin(admin.ModelAdmin):
     list_display = ('student','name','relation','phone')
+
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('company_name', 'job_location')
+
+
+@admin.register(Placement)
+class PlacementAdmin(admin.ModelAdmin):
+    list_display = ('student', 'company', 'placed_date')
