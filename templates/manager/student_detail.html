@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Student Detail{% endblock %}
+
+{% block content %}
+<button><a href="{% url 'view_students' %}" style="font-size: 14px; margin-left: 10px;">Back</a></button>
+<h3>Student Detail
+    <a href="{% url 'edit_student_by_manager' student.id %}" style="font-size: 14px; margin-left: 10px;">(Edit)</a>
+</h3>
+
+<p><strong>Roll No:</strong> {{ student.roll_no }}</p>
+<p><strong>Name:</strong> {{ student.user.first_name }} {{ student.user.last_name }}</p>
+<p><strong>Email:</strong> {{ student.user.email }}</p>
+<p><strong>Phone:</strong> {{ student.phone }}</p>
+<p><strong>City:</strong> {{ student.city }}</p>
+<p><strong>Address:</strong> {{ student.address }}</p>
+<p><strong>Pincode:</strong> {{ student.pincode }}</p>
+<p><strong>DOB:</strong> {{ student.dob }}</p>
+<p><strong>Qualification:</strong> {{ student.last_qualification }}</p>
+<p><strong>Domain:</strong> {{ student.domain }}</p>
+<p><strong>Joining Date:</strong> {{ student.joining_date }}</p>
+<p><strong>Active:</strong> {{ student.is_active }}</p>
+
+{% if student.photo %}
+<img src="{{ student.photo.url }}" width="150">
+{% endif %}
+
+<hr>
+
+<h4>Parent Details</h4>
+<p><strong>Name:</strong> {{ student.parent.name }}</p>
+<p><strong>Relation:</strong> {{ student.parent.relation }}</p>
+<p><strong>Phone:</strong> {{ student.parent.phone }}</p>
+
+<hr>
+
+<h4>Placement</h4>
+{% if student.is_placed %}
+<p><strong>Company:</strong> {{ student.placement.company.company_name }}</p>
+<p><strong>Job Location:</strong> {{ student.placement.company.job_location }}</p>
+<p><strong>Placed Date:</strong> {{ student.placement.placed_date }}</p>
+{% else %}
+<p>Not placed yet</p>
+{% endif %}
+
+{% endblock %}

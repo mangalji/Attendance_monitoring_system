@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Add Student{% endblock %}
+
+{% block content %}
+<button><a href="{% url 'manager_dashboard' %}">Back</a></button>
+<h3>Add Student</h3>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <fieldset>
+        <legend>Student Login Details</legend>
+        {{ user_form.as_p }}
+    </fieldset>
+
+    <fieldset>
+        <legend>Student Profile</legend>
+        {{ profile_form.as_p }}
+    </fieldset>
+
+    <fieldset>
+        <legend>Parent Details</legend>
+        {{ parent_form.as_p }}
+    </fieldset>
+
+    <button type="submit">Save Student</button>
+</form>
+
+{% endblock %}

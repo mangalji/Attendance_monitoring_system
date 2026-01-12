@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Delete Student{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto; text-align: center;">
+    <h3>Are you sure you want to delete this student?</h3>
+    <br>
+    <div style="border: 1px solid #ccc; padding: 20px; border-radius: 8px; background-color: #f9f9f9;">
+        <h4>{{ student.user.get_full_name }}</h4>
+        <p>Roll No: {{ student.roll_no }}</p>
+        <p>Email: {{ student.user.email }}</p>
+    </div>
+    <br>
+    <div style="color: red;">
+        <p><strong>Warning:</strong> This action cannot be undone. All associated data (Parent, Attendance, Placement)
+            will be permanently deleted.</p>
+    </div>
+    <br>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" style="background-color: #dc3545; color: white;">Yes, Delete Student</button>
+        <a href="{% url 'view_students' %}"
+            style="display: inline-block; padding: 10px 20px; text-decoration: none; border: 1px solid #ccc; border-radius: 4px; color: black;">Cancel</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<h3>Welcome {{ student.user.first_name }}</h3>
+
+<ul>
+    <li><a href="{% url 'edit_student_profile' %}">Edit Profile</a></li>
+    <li><a href="{% url 'student_view_attendance' %}">View Attendance</a></li>
+</ul>
+
+<hr>
+
+<p><strong>Roll No:</strong> {{ student.roll_no }}</p>
+<p><strong>Domain:</strong> {{ student.domain }}</p>
+<!-- <p><strong>Joining Date:</strong> {{ student.joining_date }}</p> -->
+
+{% endblock %}

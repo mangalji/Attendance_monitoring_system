@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Students List{% endblock %}
+
+{% block content %}
+<h3>Students List</h3>
+<a href="{% url 'add_student' %}" class="button"
+    style="display:inline-block; margin-bottom: 10px; padding: 5px 10px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">+
+    Add New Student</a>
+<br>
+
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Roll No</th>
+        <th>Name</th>
+        <th>Domain</th>
+        <th>Joining Date</th>
+        <th>Placed</th>
+        <th>Placed Date</th>
+        <th>Company</th>
+        <th>Job Location</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for student in students %}
+    <tr>
+        <td>{{ student.roll_no }}</td>
+        <td>
+            <a href="{% url 'student_detail' student.id %}">
+                {{ student.user.first_name }} {{ student.user.last_name }}
+            </a>
+        </td>
+        <td>{{ student.domain }}</td>
+        <td>{{ student.joining_date }}</td>
+        <td>{{ student.is_placed }}</td>
+        <td>
+            {% if student.placement %}
+            {{ student.placement.placed_date }}
+            {% endif %}
+        </td>
+        <td>
+            {% if student.placement %}
+            {{ student.placement.company.company_name }}
+            {% endif %}
+        </td>
+        <td>
+            {% if student.placement %}
+            {{ student.placement.company.job_location }}
+            {% endif %}
+        </td>
+        <td>
+            <a href="{% url 'student_detail' student.id %}" class="btn btn-sm btn-info">Edit</a>
+            <a href="{% url 'delete_student' student.id %}" class="btn btn-sm btn-danger"
+                style="margin-left: 5px; color: rgb(236, 234, 230);">Delete</a>
+            <!-- <a href="{% url 'reset_student_password' student.id %}" class="btn btn-sm btn-warning">Reset Pass</a> -->
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="8">No students found</td>
+    </tr>
+    {% endfor %}
+</table>
+<button><a href="{% url 'manager_dashboard' %}">Back</a></button>
+
+{% endblock %}

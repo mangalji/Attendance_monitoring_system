@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block content %}
+<h3>Manager Dashboard</h3>
+
+<ul>
+    <li><a href="{% url 'add_student' %}">Add Student</a></li>
+    <li><a href="{% url 'view_students' %}">View Students</a></li>
+    <li><a href="{% url 'upload_attendance' %}">Add Attendance</a></li>
+    <li><a href="{% url 'view_attendance' %}">View Attendance</a></li>
+    <li><a href="{% url 'fee_manager' %}">Fees Manager</a></li>
+</ul>
+
+{% endblock %}
