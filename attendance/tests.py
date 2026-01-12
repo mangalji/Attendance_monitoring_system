@@ -46,7 +46,7 @@ class AttendanceViewTests(TestCase):
     def test_student_access_view_attendance_denied(self):
         self.client.force_login(self.student_user)
         response = self.client.get(reverse('view_attendance'))
-        self.assertEqual(response.status_code, 302) # Redirect to login or home due to decorator
+        self.assertEqual(response.status_code, 302) 
 
     def test_student_own_attendance_view(self):
         self.client.force_login(self.student_user)

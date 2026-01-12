@@ -51,7 +51,7 @@
         style="margin-left: 20px; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">View
         as Table</button>
 </form>
-
+{% if show_data %}
 <div id="heatmap-view">
     <h4>Heatmap</h4>
     <div class="heatmap-container">
@@ -157,5 +157,12 @@
         PDF Report</button>
 </form>
 <button disabled title="Coming Soon">Send Report to Parents</button>
+{% else %}
+<div style="padding: 40px; text-align: center; border: 2px dashed #ddd; border-radius: 8px; margin-top: 20px;">
+    <p style="color: #666; font-size: 1.1em;">Please select a date range or month above and click <strong>Show</strong>
+        to view attendance records.</p>
+</div>
 
+</div>
+{% endif %}
 {% endblock %}
