@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Fees Manager{% endblock %}
+
+{% block content %}
+<style>
+    .fees-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .fees-table th,
+    .fees-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+
+    .fees-table th {
+        background-color: #f4f4f4;
+    }
+
+    .fees-table input[type="number"] {
+        width: 80px;
+        padding: 4px;
+    }
+
+    .remaining-positive {
+        color: red;
+        font-weight: bold;
+    }
+
+    .remaining-zero {
+        color: green;
+        font-weight: bold;
+    }
+</style>
+
+<h3>Fees Management</h3>
+
+<div style="margin-bottom: 20px;">
+    <button id="toggle-edit-btn" onclick="toggleEditMode()"
+        style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Edit Fees
+    </button>
+</div>
+
+<table class="fees-table" id="fees-table">
+    <thead>
+        <tr>
+            <th>Roll No</th>
+            <th>Student Name</th>
+            <th>Total Fees</th>
+            <th>Paid Fees</th>
+            <th>Remaining</th>
+            <th>Inst. 1</th>
+            <th>Inst. 2</th>
+            <th>Inst. 3</th>
+            <th>Inst. 4</th>
+            <th class="edit-only" style="display: none;">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in students %}
+        <tr>
+            <form method="post" action="{% url 'update_fee' student.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <td>{{ student.roll_no }}</td>
+                <td>{{ student.user.get_full_name }}</td>
+
+                <td>
+                    <span class="view-only">{{ student.fee_record.total_fees }}</span>
+                    <input type="number" step="0.01" name="total_fees" value="{{ student.fee_record.total_fees }}"
+                        class="edit-only" style="display: none;">
+                </td>
+
+                <td>
+                    <span class="view-only">{{ student.fee_record.paid_fees }}</span>
+                    <input type="number" step="0.01" name="paid_fees" value="{{ student.fee_record.paid_fees }}"
+                        class="edit-only" style="display: none;">
+                </td>
+
+                <td>
+                    <span
+                        class="{% if student.fee_record.remaining_fees > 0 %}remaining-positive{% else %}remaining-zero{% endif %}">
+                        {{ student.fee_record.remaining_fees }}
+                    </span>
+                    {% if student.fee_record.remaining_fees > 0 %}
+                    <br><button type="button" disabled title="Notification logic coming soon">Notify</button>
+                    {% endif %}
+                </td>
+
+                <td>
+                    <div class="view-only">
+                        {% if student.fee_record.installment_1 %}
+                        <a href="{{ student.fee_record.installment_1.url }}" target="_blank">View</a>
+                        {% else %}-{% endif %}
+                    </div>
+                    <input type="file" name="installment_1" accept="application/pdf" class="edit-only"
+                        style="display: none;">
+                </td>
+
+                <td>
+                    <div class="view-only">
+                        {% if student.fee_record.installment_2 %}
+                        <a href="{{ student.fee_record.installment_2.url }}" target="_blank">View</a>
+                        {% else %}-{% endif %}
+                    </div>
+                    <input type="file" name="installment_2" accept="application/pdf" class="edit-only"
+                        style="display: none;">
+                </td>
+
+                <td>
+                    <div class="view-only">
+                        {% if student.fee_record.installment_3 %}
+                        <a href="{{ student.fee_record.installment_3.url }}" target="_blank">View</a>
+                        {% else %}-{% endif %}
+                    </div>
+                    <input type="file" name="installment_3" accept="application/pdf" class="edit-only"
+                        style="display: none;">
+                </td>
+
+                <td>
+                    <div class="view-only">
+                        {% if student.fee_record.installment_4 %}
+                        <a href="{{ student.fee_record.installment_4.url }}" target="_blank">View</a>
+                        {% else %}-{% endif %}
+                    </div>
+                    <input type="file" name="installment_4" accept="application/pdf" class="edit-only"
+                        style="display: none;">
+                </td>
+
+                <td class="edit-only" style="display: none;">
+                    <button type="submit">Update</button>
+                </td>
+            </form>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<br>
+<button><a href="{% url 'manager_dashboard' %}">Back to Dashboard</a></button>
+
+<script>
+    function toggleEditMode() {
+        const viewElements = document.querySelectorAll('.view-only');
+        const editElements = document.querySelectorAll('.edit-only');
+        const btn = document.getElementById('toggle-edit-btn');
+
+        const isEditing = btn.innerText === 'Cancel Edit';
+
+        if (isEditing) {
+            viewElements.forEach(el => el.style.display = '');
+            editElements.forEach(el => el.style.display = 'none');
+            btn.innerText = 'Edit Fees';
+            btn.style.backgroundColor = '#007bff';
+        } else {
+            viewElements.forEach(el => el.style.display = 'none');
+            editElements.forEach(el => el.style.display = '');
+            btn.innerText = 'Cancel Edit';
+            btn.style.backgroundColor = '#6c757d';
+        }
+    }
+</script>
+{% endblock %}
