@@ -25,13 +25,13 @@ class ModelTests(TestCase):
         self.assertEqual(student.domain,'python backend')
 
 class LoginViewTests(TestCase):
-    def setup(self):
+    def setUp(self):
         self.client = Client()
         self.manager_user = User.objects.create_user(username='manager@test.com',email='manager@test.com',password='password')
         self.manager = ManagerProfile.objects.create(user=self.manager_user,phone='1234567890')
 
-        self.student_user = User.objects.create(username='student@test.com',email='student@test.com',password='password')
-        self.student = StudentProfile.objects.create(user=self.student_user,roll_no='102',phone='9090909090',dob=datetime.date(2001,9,18),joining_date=datetime.date(2025,4,1))
+        self.student_user = User.objects.create_user(username='student@test.com',email='student@test.com',password='password')
+        self.student = StudentProfile.objects.create(user=self.student_user,roll_no=102,phone='9090909090',dob=datetime.date(2001,9,18),joining_date=datetime.date(2025,4,1))
 
     def test_login_manager_redirect(self):
         response = self.client.post(reverse('login'), {
@@ -54,7 +54,7 @@ class LoginViewTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Invalid email or password")
+        self.assertContains(response, "invalid email or password")
 
 class ManagerTests(TestCase):
     def setUp(self):
@@ -122,7 +122,7 @@ class StudentTests(TestCase):
         
         self.student.refresh_from_db()
         self.assertEqual(self.student.phone, '0000000000')
-        self.assertEqual(self.student.roll_no, '111') 
+        self.assertEqual(self.student.roll_no, 111) 
         self.assertEqual(self.student.domain, 'backend')
         self.assertEqual(self.student.joining_date, datetime.date(2023, 1, 1))
 

@@ -17,6 +17,7 @@ class StudentUserForm(forms.ModelForm):
         super(StudentUserForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields['password'].required = False
+            self.fields['name'].initial = self.instance.first_name
 
     def save(self, commit=True):
         user = super().save(commit=False)
