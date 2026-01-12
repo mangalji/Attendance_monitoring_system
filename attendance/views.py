@@ -34,7 +34,7 @@ def upload_attendance(request):
             records_created = 0
 
             for r in range(start_row,rows,3):
-                if r>= rows:
+                if r+2 >= rows:
                     break
 
                 roll_no = df.iloc[r,3]
@@ -113,89 +113,85 @@ def upload_attendance(request):
 @login_required
 @manager_required
 def view_attendance(request):
+    # Defaults
     current_date = datetime.now().date()
-    month_str = request.GET.get('month') # YYYY-MM
+    month_str = request.GET.get('month') 
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
-
     students = list(StudentProfile.objects.all())
     
     def natural_sort_key(s):
+
         try:
             return int(s.roll_no)
         except ValueError:
             return s.roll_no
-        
+
     students.sort(key=natural_sort_key)
+    
+    show_data = False
+    start_date = None
+    end_date = None
 
     if start_date_str and end_date_str:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        show_data = True
     elif month_str:
-        year, month = map(int, month_str.split('-'))
-        start_date = datetime(year, month, 1).date()
-        last_day = calendar.monthrange(year, month)[1]
-        end_date = datetime(year, month, last_day).date()
-    else:
-        last_record = AttendanceRecord.objects.order_by('-date').first()
-        if last_record:
-            target_date = last_record.date
-        else:
-            target_date = current_date
-            
-        start_date = target_date.replace(day=1)
-        import calendar
-        last_day = calendar.monthrange(target_date.year, target_date.month)[1]
-        end_date = target_date.replace(day=last_day)
-        
-        month_str = target_date.strftime("%Y-%m")
+        year, month_val = map(int, month_str.split('-'))
+        start_date = datetime(year, month_val, 1).date()
+        last_day = calendar.monthrange(year, month_val)[1]
+        end_date = datetime(year, month_val, last_day).date()
+        show_data = True
 
-        date_list = []
-    delta = end_date - start_date
-    for i in range(delta.days + 1):
-        date_list.append(start_date + timedelta(days=i))
-
-    records = AttendanceRecord.objects.filter(date__range=[start_date, end_date])
-    
-    records_by_student = defaultdict(dict)
-    for r in records:
-        records_by_student[r.student_id][r.date] = r
-
+    date_list = []
     attendance_data = []
-    for student in students:
-        student_records = records_by_student.get(student.id, {})
+
+    if show_data:
+        delta = end_date - start_date
+        for i in range(delta.days + 1):
+            date_list.append(start_date + timedelta(days=i))
+
+        records = AttendanceRecord.objects.filter(date__range=[start_date, end_date])
         
-        row_data = {
-            'student': student,
-            'daily_data': [], 
-            'total_hours': 0,
-            'days_present': 0
-        }
-        
-        for d in date_list:
-            record = student_records.get(d)
-            cell = {
-                'date': d,
-                'hours': 0,
-                'status_color': 'white', 
-                'original_record': record 
+        records_by_student = defaultdict(dict)
+        for r in records:
+            records_by_student[r.student_id][r.date] = r
+
+        for student in students:
+            student_records = records_by_student.get(student.id, {})
+            
+            row_data = {
+                'student': student,
+                'daily_data': [], 
+                'total_hours': 0,
+                'days_present': 0
             }
             
-            if record:
-                h = float(record.total_hours)
-                cell['hours'] = h
-                if h > 0:
-                     row_data['total_hours'] += h
-                     row_data['days_present'] += 1
+            for d in date_list:
+                record = student_records.get(d)
+                cell = {
+                    'date': d,
+                    'hours': 0,
+                    'status_color': 'white',
+                    'original_record': record 
+                }
                 
-                if h >= 6.0:
-                    cell['status_color'] = '#4caf50' 
-                else:
-                    cell['status_color'] = '#f44336' 
-            
-            row_data['daily_data'].append(cell)
-            
-        attendance_data.append(row_data)
+                if record:
+                    h = float(record.total_hours)
+                    cell['hours'] = h
+                    if h > 0:
+                         row_data['total_hours'] += h
+                         row_data['days_present'] += 1
+                    
+                    if h >= 6.0:
+                        cell['status_color'] = '#4caf50' 
+                    else:
+                        cell['status_color'] = '#f44336' 
+                
+                row_data['daily_data'].append(cell)
+                
+            attendance_data.append(row_data)
 
     context = {
         'attendance_data': attendance_data,
@@ -203,6 +199,7 @@ def view_attendance(request):
         'start_date': start_date,
         'end_date': end_date,
         'month_str': month_str,
+        'show_data': show_data,
     }
     return render(request, 'attendance/view_attendance.html', context)
 
@@ -293,70 +290,63 @@ def student_view_attendance(request):
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
 
+    show_data = False
+    start_date = None
+    end_date = None
+
     if start_date_str and end_date_str:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        show_data = True
     elif month_str:
         year, month = map(int, month_str.split('-'))
         start_date = datetime(year, month, 1).date()
         last_day = calendar.monthrange(year, month)[1]
         end_date = datetime(year, month, last_day).date()
-    else:
-         
-        last_record = AttendanceRecord.objects.filter(student=student).order_by('-date').first()
-        if last_record:
-            target_date = last_record.date
-        else:
-            target_date = current_date
-        
-        start_date = target_date.replace(day=1)
-        last_day = calendar.monthrange(target_date.year, target_date.month)[1]
-        end_date = target_date.replace(day=last_day)
-        
-        month_str = target_date.strftime("%Y-%m")
+        show_data = True
 
     date_list = []
-    delta = end_date - start_date
-    for i in range(delta.days + 1):
-        date_list.append(start_date + timedelta(days=i))
+    attendance_data = []
 
+    if show_data:
+        # Date List
+        delta = end_date - start_date
+        for i in range(delta.days + 1):
+            date_list.append(start_date + timedelta(days=i))
+        # Fetch Records for this student only
+        records = AttendanceRecord.objects.filter(student=student, date__range=[start_date, end_date])
+        records_by_date = {r.date: r for r in records}
+        daily_data = []
+        total_hours = 0
+        days_present = 0
 
-    records = AttendanceRecord.objects.filter(student=student, date__range=[start_date, end_date])
-    records_by_date = {r.date: r for r in records}
-    
-    daily_data = []
-    total_hours = 0
-    days_present = 0
-    
-    for d in date_list:
-        record = records_by_date.get(d)
-        cell = {'date': d, 'hours': 0, 'status_color': 'white'}
-        
-        if record:
-            h = float(record.total_hours)
-            cell['hours'] = h
-            if h > 0:
-                total_hours += h
-                days_present += 1
-            
-            if h >= 6.0: cell['status_color'] = '#4caf50'
-            elif h > 0: cell['status_color'] = '#f44336'
-        
-        daily_data.append(cell)
+        for d in date_list:
+            record = records_by_date.get(d)
+            cell = {'date': d, 'hours': 0, 'status_color': 'white'}
+            if record:
+                h = float(record.total_hours)
+                cell['hours'] = h
+                if h > 0:
+                    total_hours += h
+                    days_present += 1
+                if h >= 6.0: cell['status_color'] = '#4caf50'
+                elif h > 0: cell['status_color'] = '#f44336'
+            daily_data.append(cell)
 
-    attendance_data = [{
-        'student': student,
-        'daily_data': daily_data,
-        'total_hours': total_hours,
-        'days_present': days_present
-    }]
+        attendance_data = [{
+            'student': student,
+            'daily_data': daily_data,
+            'total_hours': total_hours,
+            'days_present': days_present
+        }]
 
     context = {
-        'attendance_data': attendance_data, 
+        'attendance_data': attendance_data,
         'date_list': date_list,
         'start_date': start_date,
         'end_date': end_date,
         'month_str': month_str,
+        'show_data': show_data,
     }
     return render(request, 'attendance/student_view_attendance.html', context)
 

@@ -15,12 +15,12 @@ class AttendanceRecord(models.Model):
         unique_together = ('student','date')
         ordering = ['-date']
 
-    def clean(self):
-        if self.date and self.date>date.today():
-            raise ValidationError('attendance date can not be in the future.')
-        if self.in_time and self.out_time:
-            if self.out_time <= self.in_time:
-                raise ValidationError('out time must be after in time.')
+    # def clean(self):
+    #     if self.date and self.date>date.today():
+    #         raise ValidationError('attendance date can not be in the future.')
+    #     if self.in_time and self.out_time:
+    #         if self.out_time <= self.in_time:
+    #             raise ValidationError('out time must be after in time.')
             
     def save(self,*args,**kwargs):
         self.clean()

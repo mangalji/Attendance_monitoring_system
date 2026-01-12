@@ -21,7 +21,7 @@ def user_login(request):
             if hasattr(user,'managerprofile'):
                 return redirect('manager_dashboard')
             elif hasattr(user,'studentprofile'):
-                return redirect('studentdashboard')
+                return redirect('student_dashboard')
             else:
                 messages.error(request,'you are not authorised to login')
                 logout(request)
@@ -50,7 +50,7 @@ def add_student(request):
         profile_form = StudentProfileForm(request.POST,request.FILES,prefix='profile')
         parent_form = ParentForm(request.POST,prefix='parent')
 
-        if user_form.is_valid() and profile_form.is_valid():
+        if user_form.is_valid() and profile_form.is_valid() and parent_form.is_valid():
             user = user_form.save(commit=False)
             user.username = user.email
             user.save()
@@ -66,16 +66,16 @@ def add_student(request):
 
             messages.success(request,'Student added successfully')
             return redirect('view_students')
-        else:
-            user_form = StudentUserForm(prefix='student_user')
-            profile_form = StudentProfileForm(prefix='profile')
-            parent_form = ParentForm(prefix='parent')
+    else:
+        user_form = StudentUserForm(prefix='student_user')
+        profile_form = StudentProfileForm(prefix='profile')
+        parent_form = ParentForm(prefix='parent')
 
-        return render(request,'manager/add_student.html',{
-            'user_form':user_form,
-            'profile_form':profile_form,
-            'parent_form':parent_form
-        })
+    return render(request,'manager/add_student.html',{
+        'user_form':user_form,
+        'profile_form':profile_form,
+        'parent_form':parent_form
+    })
     
 @login_required
 @manager_required
@@ -106,7 +106,7 @@ def reset_student_password(request,pk):
     return render(request,'manager/reset_student_password.html',{'student':student})
 
 @login_required
-@manager_required
+@student_required
 def student_dashboard(request):
     student = get_object_or_404(StudentProfile,user=request.user)
     return render(request,'student/dashboard.html',{

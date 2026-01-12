@@ -34,7 +34,7 @@ urlpatterns = [
     path('',redirect_root),
     path('accounts/',include('accounts.urls')),
     path('attendance/',include('attendance.urls')),
-    # path('fees/',include('fees.urls')),
+    path('fees/',include('fees.urls')),
 
 ]
 

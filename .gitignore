@@ -1,2 +1,3 @@
 .venv
-credentials_admin.txt
+# credentials_admin.txt
+credentials.txt
