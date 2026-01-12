@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Upload Attendance{% endblock %}
+
+{% block content %}
+<button><a href="{% url 'manager_dashboard' %}">Back</a></button>
+<h3>Upload Attendance Sheet</h3>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div>
+        <label for="month">Select Month:</label>
+        <input type="month" id="month" name="month" required>
+    </div>
+    <br>
+
+    <div>
+        <label for="attendance_file">Upload Excel File (.xls or .xlsx):</label>
+        <input type="file" id="attendance_file" name="attendance_file" accept=".xls,.xlsx" required>
+    </div>
+    <br>
+
+    <button type="submit">Upload & Process</button>
+</form>
+
+{% endblock %}

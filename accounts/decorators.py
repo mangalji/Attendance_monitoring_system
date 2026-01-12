@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 
-def manager_reqeuired(view_func):
+def manager_required(view_func):
     def wrapper(request,*args,**kwargs):
         if hasattr(request.user, 'managerprofile'):
             return view_func(request, *args,**kwargs)

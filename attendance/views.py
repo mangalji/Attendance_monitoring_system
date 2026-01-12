@@ -17,7 +17,7 @@ from .utils import generate_attendance_pdf
 
 @login_required
 @manager_required
-def uplaod_attendanc(request):
+def upload_attendance(request):
     if request.method == 'POST':
         excel_file = request.FILES.get('attendance_file')
         month = request.POST.get('month')

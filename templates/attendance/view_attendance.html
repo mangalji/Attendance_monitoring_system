@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load attendance_extras %}
+{% block title %}View Attendance{% endblock %}
+
+{% block content %}
+<style>
+    .heatmap-container {
+        overflow-x: auto;
+        margin-bottom: 20px;
+    }
+
+    .heatmap-table {
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .heatmap-table th,
+    .heatmap-table td {
+        border: 1px solid #ddd;
+        padding: 5px;
+        text-align: center;
+    }
+
+    .heatmap-cell {
+        width: 30px;
+        height: 30px;
+        display: inline-block;
+    }
+
+    .status-box {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        border: 1px solid #ccc;
+    }
+</style>
+
+<button><a href="{% url 'manager_dashboard' %}">Back</a></button>
+<h3>View Attendance</h3>
+
+<!-- Filters -->
+<form method="get" style="margin-bottom: 20px;">
+    <label>Start Date: <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}"></label>
+    <label>End Date: <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}"></label>
+    <button type="submit">Show</button>
+
+    <span style="margin-left: 20px;">OR Select Month:</span>
+    <input type="month" name="month" value="{{ month_str }}">
+    <button type="submit">Go</button>
+    <button type="button" id="toggle-view-btn" onclick="toggleView()"
+        style="margin-left: 20px; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">View
+        as Table</button>
+</form>
+
+<div id="heatmap-view">
+    <h4>Heatmap</h4>
+    <div class="heatmap-container">
+        <table class="heatmap-table">
+            <thead>
+                <tr>
+                    <th>Student / Date</th>
+                    {% for date in date_list %}
+                    <th>{{ date|date:"d" }}<br><small>{{ date|date:"M" }}</small></th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in attendance_data %}
+                <tr>
+                    <td style="text-align: left; min-width: 150px;">
+                        <strong>{{ row.student.user.first_name }}</strong><br>
+                        <small>{{ row.student.roll_no }}</small>
+                    </td>
+                    {% for cell in row.daily_data %}
+                    <td style="--bg-color: {{ cell.status_color }}; background-color: var(--bg-color);"
+                        title="{{ cell.date }}: {{ cell.hours|floatformat:2 }} hrs">
+                        <!-- Tooltip logic is in title attribute -->
+                        <span style="visibility: hidden;">{{ cell.hours }}</span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <strong>Legend:</strong>
+        <span class="status-box" style="background-color: #4caf50;"></span> &ge; 6 Hrs
+        <span class="status-box" style="background-color: #f44336; margin-left: 10px;"></span> &lt; 6 Hrs
+        <span class="status-box" style="background-color: white; margin-left: 10px;"></span> Absent/No Data
+    </div>
+</div>
+
+<div id="table-view" style="display: none;">
+    <h4>Detailed Table</h4>
+    <table border="1" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Roll No</th>
+                {% for date in date_list %}
+                <th>{{ date|date:"d M" }}</th>
+                {% endfor %}
+                <th>Total Hrs</th>
+                <th>Days Present</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in attendance_data %}
+            <tr>
+                <td>{{ row.student.user.first_name }}</td>
+                <td>{{ row.student.roll_no }}</td>
+                {% for cell in row.daily_data %}
+                <td style="text-align: center;">
+                    {% if cell.hours > 0 %}
+                    {{ cell.hours|format_duration }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                {% endfor %}
+                <td style="font-weight: bold; text-align: center;">{{ row.total_hours|format_duration }}</td>
+                <td style="font-weight: bold; text-align: center;">{{ row.days_present }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleView() {
+        var heatmap = document.getElementById('heatmap-view');
+        var table = document.getElementById('table-view');
+        var btn = document.getElementById('toggle-view-btn');
+
+        if (heatmap.style.display === 'none') {
+            heatmap.style.display = 'block';
+            table.style.display = 'none';
+            btn.innerText = 'View as Table';
+        } else {
+            heatmap.style.display = 'none';
+            table.style.display = 'block';
+            btn.innerText = 'View as Graph';
+        }
+    }
+</script>
+
+<br>
+<!-- Buttons for future implementation -->
+<form action="{% url 'download_attendance_report' %}" method="get" style="display:inline;">
+    <input type="hidden" name="month" value="{{ month_str }}">
+    <input type="hidden" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+    <input type="hidden" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+    <button type="submit"
+        style="padding: 10px 20px; background-color: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;">Download
+        PDF Report</button>
+</form>
+<button disabled title="Coming Soon">Send Report to Parents</button>
+
+{% endblock %}
