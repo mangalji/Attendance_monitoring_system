@@ -21,7 +21,7 @@ class AttendanceRecord(models.Model):
         if self.in_time and self.out_time:
             if self.out_time <= self.in_time:
                 raise ValidationError('out time must be after in time.')
-            d 
+            
     def save(self,*args,**kwargs):
         self.clean()
         super().save(*args,**kwargs)
