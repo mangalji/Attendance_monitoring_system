@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock title %}
+
+{% block content %}
+<button><a href="{% url 'student_dashboard' %}">Back to Dashboard</a></button>
+<h3>Notifications</h3>
+
+<div style="margin-top: 20px;">
+    {% if notifications %}
+    <ul style="list-style: none; padding: 0;">
+        {% for notification in notifications %}
+        <li class="notification-item {% if not notification.is_read %}unread{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span style="font-size: 0.85em; color: #888;">{{ notification.created_at|date:"d M Y, H:i" }}</span>
+                    <p class="notification-message {% if not notification.is_read %}unread-msg{% endif %}">
+                        {{ notification.message }}
+                    </p>
+                </div>
+                {% if not notification.is_read %}
+                <a href="{% url 'mark_notification_as_read' notification.pk %}" class="read-btn">Mark as read</a>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div style="padding: 40px; text-align: center; color: #999; border: 2px dashed #eee; border-radius: 8px;">
+        No notifications yet.
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    h3 {
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    button a {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .notification-item {
+        margin-bottom: 5px;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #eee;
+        background-color: #fff;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .notification-item.unread {
+        background-color: #fff9e6;
+    }
+
+    .notification-message {
+        margin: 5px 0 0;
+        color: #333;
+        font-weight: normal;
+    }
+
+    .notification-message.unread-msg {
+        font-weight: bold;
+    }
+
+    .read-btn {
+        font-size: 0.8em;
+        color: #007bff;
+        text-decoration: none;
+        background: #eef6ff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}

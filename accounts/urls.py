@@ -13,4 +13,6 @@ urlpatterns = [
     path('student/edit-profile/', views.edit_student_profile, name='edit_student_profile'),
     path('manager/student/<int:pk>/edit/', views.edit_student_by_manager, name='edit_student_by_manager'),
     path('manager/student/<int:pk>/delete/', views.delete_student, name='delete_student'),
+    path('notifications/',views.notification_view,name='notification_view'),
+    path('notifications/read/<int:pk>/',views.mark_notification_as_read,name='mark_notification_as_read'),
 ]

@@ -32,3 +32,4 @@ class CompanyAdmin(admin.ModelAdmin):
 @admin.register(Placement)
 class PlacementAdmin(admin.ModelAdmin):
     list_display = ('student', 'company', 'placed_date')
+

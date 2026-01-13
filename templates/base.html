@@ -13,6 +13,7 @@
             <div>
                 {% if user.is_authenticated %}
                 <span class="navbar-text me-3">Hello, {{ user.first_name }}</span>
+                
                 <a class="btn btn-outline-light btn-sm" href="{% url 'logout' %}">Logout</a>
                 {% endif %}
             </div>

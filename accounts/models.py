@@ -78,3 +78,19 @@ class Placement(models.Model):
 
     def __str__(self):
         return f"{self.student.roll_no} - {self.company.company_name}"
+
+class Notification(models.Model):
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    message = models.TextField()
+    notification_type = models.CharField(max_length=30,choices=[
+        ('attendance','Attendance Update'),
+        ('fees','Fees Update'),
+        ('reminder','Fee Reminder'),
+        ('profile','Profile Update'),
+    ])
+
+    is_read = models.BooleanField(default=False)
+    created_at  =models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.recipient.username} - {self.notification_type}"

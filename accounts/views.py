@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
-from .models import StudentProfile, ManagerProfile, Parent
+from .models import StudentProfile, ManagerProfile, Parent, Notification
 from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfEditForm
 from .decorators import manager_required, student_required
 
@@ -180,3 +180,19 @@ def delete_student(request,pk):
     return render(request,'manager/confirm_delete_student.html',{
         'student':student,
     })
+
+@login_required
+def notification_view(request):
+    notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+    unread_count = notifications.filter(is_read = False).count()
+    return render(request,'student/notifications.html',{
+        'notifications':notifications,
+        'unread_count':unread_count
+    })
+
+@login_required
+def mark_notification_as_read(request, pk):
+    notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    notification.is_read = True
+    notification.save()
+    return redirect('notification_view')
