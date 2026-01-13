@@ -8,7 +8,9 @@ from .models import FeeRecord
 @login_required
 @manager_required
 def fee_manager(request):
-
+    if not (request.user.is_superuser or hasattr(request.user, 'managerprofile')):
+        return redirect('student_dashboard')
+    
     students = list(StudentProfile.objects.select_related('fee_record', 'user').all())
     
 

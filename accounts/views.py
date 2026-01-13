@@ -1,7 +1,4 @@
 from django.shortcuts import render, redirect, get_object_or_404
-
-# Create your views here.
-
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -17,8 +14,9 @@ def user_login(request):
         user = authenticate(request,username=email,password=password)
         if user:
             login(request,user)
-
-            if hasattr(user,'managerprofile'):
+            if user.is_superuser:
+                return redirect('/admin/')
+            elif hasattr(user,'managerprofile'):
                 return redirect('manager_dashboard')
             elif hasattr(user,'studentprofile'):
                 return redirect('student_dashboard')

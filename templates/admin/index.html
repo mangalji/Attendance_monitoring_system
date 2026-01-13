@@ -1,0 +1,47 @@
+{% extends "admin/index.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div id="content-main">
+    <!-- Custom Attendance Link for Admins -->
+    <div class="module" id="custom-attendance-tool"
+        style="margin-bottom: 20px; border: 1px solid #ccc; border-top: 5px solid #28a745; background: #fff; border-radius: 4px;">
+        <table style="width: 100%;">
+            <caption
+                style="background: #e9ecef; padding: 10px; font-weight: bold; color: #333; display: flex; justify-content: space-between; align-items: center;">
+                <span>STUDENT ATTENDANCE CONTROL</span>
+                <a href="{% url 'view_attendance' %}" class="addlink"
+                    style="background: #28a745; color: white; padding: 4px 12px; border-radius: 4px; text-decoration: none;">View
+                    Attendance Panel</a>
+            </caption>
+        </table>
+        <div style="padding: 10px; font-size: 0.9em; color: #666;">
+            Access and download student attendance reports across all domains and managers.
+        </div>
+    </div>
+
+    <!-- Custom Fees Management Link for Admins -->
+    <div class="module" id="custom-fees-tool" style="margin-bottom: 20px; border: 1px solid #ccc; border-top: 5px solid #ff9800; background: #fff; border-radius: 4px;">
+        <table style="width: 100%;">
+            <caption style="background: #e9ecef; padding: 10px; font-weight: bold; color: #333; display: flex; justify-content: space-between; align-items: center;">
+                <span>STUDENT FEES MANAGEMENT</span>
+                <a href="{% url 'fee_manager' %}" class="addlink" style="background: #ff9800; color: white; padding: 4px 12px; border-radius: 4px; text-decoration: none;">Manage Fees</a>
+            </caption>
+        </table>
+        <div style="padding: 10px; font-size: 0.9em; color: #666;">
+            View and update student fee records, upload receipts, and send payment reminders.
+        </div>
+    </div>
+
+    {{ block.super }}
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    #custom-attendance-tool .addlink:hover {
+        background: #218838 !important;
+    }
+</style>
+{% endblock %}

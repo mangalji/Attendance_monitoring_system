@@ -22,7 +22,9 @@ from django.shortcuts import redirect
 
 def redirect_root(request):
     if request.user.is_authenticated:
-        if hasattr(request.user,'managerprofile'):
+        if request.user.is_superuser:
+            return redirect('/admin/')
+        elif hasattr(request.user,'managerprofile'):
             return redirect('manager_dashboard')
         elif hasattr(request.user,'studentprofile'):
             return redirect('student_dashboard')

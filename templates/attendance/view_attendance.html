@@ -34,8 +34,11 @@
         border: 1px solid #ccc;
     }
 </style>
-
+{% if user.is_superuser %}
+<button><a href="/admin/"><Back/a></button>
+{% else %}
 <button><a href="{% url 'manager_dashboard' %}">Back</a></button>
+{% endif %}
 <h3>View Attendance</h3>
 
 <!-- Filters -->

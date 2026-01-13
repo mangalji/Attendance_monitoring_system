@@ -113,6 +113,9 @@ def upload_attendance(request):
 @login_required
 @manager_required
 def view_attendance(request):
+    if not (request.user.is_superuser or hasattr(request.user,'managerprofile')):
+        return redirect('student_dashboard')
+    
     current_date = datetime.now().date()
     month_str = request.GET.get('month') 
     start_date_str = request.GET.get('start_date')
