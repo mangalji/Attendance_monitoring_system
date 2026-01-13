@@ -36,7 +36,8 @@ def update_fee(request, student_id):
         try:
             student = StudentProfile.objects.get(id=student_id)
             fee_record, created = FeeRecord.objects.get_or_create(student=student)
-            
+            print(fee_record)
+            print(created)
             
             fee_record.total_fees = float(request.POST.get('total_fees', 0) or 0)
             fee_record.paid_fees = float(request.POST.get('paid_fees', 0) or 0)
@@ -82,10 +83,11 @@ def send_fee_reminder(request,student_id):
 def student_view_fees(request):
     try:
         student = request.user.studentprofile
-
     except StudentProfile.DoesNotExist:
         messages.error(request,'student profile not found')
         return redirect('student_dashboard')
     
     fee_record, created = FeeRecord.objects.get_or_create(student=student) 
+    print(fee_record)
+    print(created)
     return render(request,'fees/student_view_fees.html',{'fee_record':fee_record})
