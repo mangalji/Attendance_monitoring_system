@@ -205,7 +205,7 @@ def view_attendance(request):
     return render(request, 'attendance/view_attendance.html', context)
 
 @login_required
-@manager_required
+# @manager_required
 def download_attendance_report(request):
     current_date = datetime.now().date()
     month_str = request.GET.get('month')

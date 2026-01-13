@@ -12,7 +12,7 @@ class FeeRecord(models.Model):
     installment_3 = models.FileField(upload_to='receipts/', null=True, blank=True)
     installment_4 = models.FileField(upload_to='receipts/', null=True, blank=True)
 
-    def clean(self):
+    def validation(self):
         if self.total_fees < 0:
             raise ValidationError("Total fees cannot be negative.")
         if self.paid_fees < 0:
@@ -21,7 +21,7 @@ class FeeRecord(models.Model):
             raise ValidationError("Paid fees cannot be greater than total fees.")
 
     def save(self, *args, **kwargs):
-        self.clean()
+        self.validation()
         super().save(*args, **kwargs)
 
     def __str__(self):

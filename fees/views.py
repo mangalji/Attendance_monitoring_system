@@ -20,8 +20,7 @@ def fee_manager(request):
             return s.roll_no
 
     students.sort(key=studnet_sorting)
-    
-    # Ensure every student has a FeeRecord 
+     
     for student in students:
         if not hasattr(student, 'fee_record'):
             FeeRecord.objects.get_or_create(student=student)
@@ -76,7 +75,7 @@ def send_fee_reminder(request,student_id):
     )
     messages.success(request,f"fee reminder sent to {student.user.first_name}")
     return redirect('fee_manager')
-
+@login_required
 def student_view_fees(request):
     try:
         student = request.user.studentprofile
@@ -87,3 +86,13 @@ def student_view_fees(request):
     
     fee_record, created = FeeRecord.objects.get_or_create(student=student) 
     return render(request,'fees/student_view_fees.html',{'fee_record':fee_record})
+
+'''@login_required
+def student_self_fee_view(request):
+    student = request.user.studentprofile
+    fee_record, created = FeeRecord.objects.get_or_create(student=student)
+
+    return render(request,'fees/student_self_fee_view.html',{
+        'fee_record':fee_record
+    })
+''' # pending for now
