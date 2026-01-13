@@ -35,7 +35,7 @@
     }
 </style>
 {% if user.is_superuser %}
-<button><a href="/admin/"><Back/a></button>
+<button><a href="/admin/">Back</a></button>
 {% else %}
 <button><a href="{% url 'manager_dashboard' %}">Back</a></button>
 {% endif %}

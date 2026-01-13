@@ -26,12 +26,10 @@ class AttendanceModelTests(TestCase):
 class AttendanceViewTests(TestCase):
     def setUp(self):
         self.client = Client()
-        
-        # Manager
+    
         self.manager_user = User.objects.create_user(username='manager', password='password')
         ManagerProfile.objects.create(user=self.manager_user, phone='123')
         
-        # Student
         self.student_user = User.objects.create_user(username='student@test.com', email='student@test.com', first_name='student', password='password')
         self.student = StudentProfile.objects.create(
             user=self.student_user, roll_no='102', phone='456', dob=datetime.date(2000, 1, 1), 

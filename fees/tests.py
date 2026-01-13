@@ -1,6 +1,3 @@
-from django.test import TestCase
-
-# Create your tests here.
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -30,7 +27,6 @@ class FeeViewTests(TestCase):
         self.manager_user = User.objects.create_user(username='manager', password='password')
         ManagerProfile.objects.create(user=self.manager_user, phone='123')
         
-        # Create multiple students for sorting test
         for r in ['10', '2', '1']:
             u = User.objects.create_user(username=f'stu{r}', password='password')
             StudentProfile.objects.create(

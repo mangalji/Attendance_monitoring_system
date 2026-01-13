@@ -111,7 +111,6 @@ def upload_attendance(request):
     return render(request, 'attendance/upload_attendance.html')
 
 @login_required
-@manager_required
 def view_attendance(request):
     if not (request.user.is_superuser or hasattr(request.user,'managerprofile')):
         return redirect('student_dashboard')
