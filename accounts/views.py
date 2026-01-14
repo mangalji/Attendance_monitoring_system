@@ -209,7 +209,7 @@ def student_forget_password(request):
 
             messages.success(request, "password resets successfullly, you can now login with your new password")
             return redirect('login')
-        else:
-            form = StudentForgotPasswordForm()
+    else:
+        form = StudentForgotPasswordForm()
 
-        return render(request, 'student/forget_password.html', {'form': form})
+    return render(request, 'student/forgot_password.html', {'form': form})
