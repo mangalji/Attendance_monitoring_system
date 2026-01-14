@@ -102,3 +102,36 @@ class ManagerCreationForm(forms.ModelForm):
         if commit:
             manager.save()
         return manager
+
+class StudentForgotPasswordForm(forms.Form):
+
+    email = forms.EmailField(required=True, label="Registered Email")
+    phone = forms.CharField(max_length=15,required=True, label="Registered Phone Number")
+    roll_no = forms.CharField(max_length=10,required=True, label="Registeret Roll Number")
+    new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
+    confirm_password = forms.CharField(widget=forms.PasswordInput, label="Confirm Password")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get('email')
+        phone = cleaned_data.get('phone')
+        roll_no = cleaned_data.get('roll_no')
+        new_password = cleaned_data.get('new_password')
+        confirm_password = cleaned_data.get('confirm_password')
+
+        if email or phone or roll_no:
+            try:
+                student = StudentProfile.objects.select_related('user').get(
+                    user__email = email,
+                    phone = phone,
+                    roll_no = roll_no
+                )
+            except StudentProfile.DoesNotExist:
+                raise ValidationError("Invalid email, phone number or roll number")
+            cleaned_data['student'] = student
+
+        
+        if (new_password and confirm_password) and (new_password != confirm_password):
+            raise ValidationError("new password nad confirm password do not match")
+
+        return cleaned_data

@@ -15,4 +15,5 @@ urlpatterns = [
     path('manager/student/<int:pk>/delete/', views.delete_student, name='delete_student'),
     path('notifications/',views.notification_view,name='notification_view'),
     path('notifications/read/<int:pk>/',views.mark_notification_as_read,name='mark_notification_as_read'),
+    path('forget-password/',views.student_forget_password,name='student_forget_password'),
 ]

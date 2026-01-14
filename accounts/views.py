@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
 from .models import StudentProfile, ManagerProfile, Parent, Notification
-from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfEditForm
+from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfEditForm, StudentForgotPasswordForm
 from .decorators import manager_required, student_required
 
 def user_login(request):
@@ -194,3 +194,22 @@ def mark_notification_as_read(request, pk):
     notification.is_read = True
     notification.save()
     return redirect('notification_view')
+
+
+def student_forget_password(request):
+
+    if request.method == 'POST':
+        form  = StudentForgotPasswordForm(request.POST)
+        if form.is_valid():
+            student = form.cleaned_data['student']
+            password = form.cleaned_data['new_password']
+            user = student.user
+            user.set_password(password)
+            user.save()
+
+            messages.success(request, "password resets successfullly, you can now login with your new password")
+            return redirect('login')
+        else:
+            form = StudentForgotPasswordForm()
+
+        return render(request, 'student/forget_password.html', {'form': form})
