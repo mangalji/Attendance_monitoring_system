@@ -97,7 +97,7 @@ def reset_student_password(request,pk):
             user = student.user
             user.set_password(new_password)
             user.save()
-            messages.success(request,f'passoword for {user.first_name} has bees reset successfully')
+            messages.success(request,f'Password for {user.first_name} has been reset successfully')
             return redirect('view_students')
         else:
             messages.error(request,'password cannot be empty')

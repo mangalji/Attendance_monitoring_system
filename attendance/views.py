@@ -13,6 +13,7 @@ import calendar
 from collections import defaultdict
 from django.http import FileResponse
 from .utils import generate_attendance_pdf
+from django.core.files.storage import default_storage
 
 
 @login_required
@@ -349,7 +350,4 @@ def student_view_attendance(request):
         'month_str': month_str,
         'show_data': show_data,
     }
-    return render(request, 'attendance/student_view_attendance.html', context)
-
-
     return render(request, 'attendance/student_view_attendance.html', context)
