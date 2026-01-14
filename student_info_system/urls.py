@@ -21,13 +21,13 @@ from django.conf import settings
 from django.shortcuts import redirect
 
 def redirect_root(request):
-    if request.user.is_authenticated:
-        if request.user.is_superuser:
-            return redirect('/admin/')
-        elif hasattr(request.user,'managerprofile'):
-            return redirect('manager_dashboard')
-        elif hasattr(request.user,'studentprofile'):
-            return redirect('student_dashboard')
+#    if request.user.is_authenticated:
+ #       if request.user.is_superuser:
+  #          return redirect('/admin/')
+   #     elif hasattr(request.user,'managerprofile'):
+   #         return redirect('manager_dashboard')
+  #      elif hasattr(request.user,'studentprofile'):
+ #           return redirect('student_dashboard')
     return redirect('login')
 
 

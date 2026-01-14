@@ -6,14 +6,28 @@ from django.contrib.auth import authenticate,login,logout
 from .models import StudentProfile, ManagerProfile, Parent, Notification
 from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfEditForm, StudentForgotPasswordForm
 from .decorators import manager_required, student_required
+from django.contrib.sessions.models import Session
 
 def user_login(request):
+    if request.method == 'GET' and request.user.is_authenticated:
+        messages.info(request,'You are already logged in, login again to switch user')
+
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
         user = authenticate(request,username=email,password=password)
         if user:
             login(request,user)
+
+            current_session_key = request.session.session_key
+            for session in Session.objects.all():
+                try:
+                    data = session.get_decoded()
+                    if data.get('_auth_user_id') = str(user.id) and session.session_key != current_session_key:
+                        session.delete()
+                except:
+                    pass
+
             if user.is_superuser:
                 return redirect('/admin/')
             elif hasattr(user,'managerprofile'):
@@ -26,7 +40,11 @@ def user_login(request):
         else:
             messages.error(request,'invalid email or password')
 
-    return render(request,'login.html')
+    response = return render(request,'login.html')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0
+    return response'
 
 @login_required
 def user_logout(request):
