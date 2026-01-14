@@ -23,7 +23,7 @@ def user_login(request):
             for session in Session.objects.all():
                 try:
                     data = session.get_decoded()
-                    if data.get('_auth_user_id') = str(user.id) and session.session_key != current_session_key:
+                    if data.get('_auth_user_id') == str(user.id) and session.session_key != current_session_key:
                         session.delete()
                 except:
                     pass
@@ -40,7 +40,7 @@ def user_login(request):
         else:
             messages.error(request,'invalid email or password')
 
-    response = return render(request,'login.html')
+    response = render(request,'login.html')
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
