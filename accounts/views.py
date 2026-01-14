@@ -43,8 +43,8 @@ def user_login(request):
     response = return render(request,'login.html')
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
-    response['Expires'] = '0
-    return response'
+    response['Expires'] = '0'
+    return response
 
 @login_required
 def user_logout(request):
