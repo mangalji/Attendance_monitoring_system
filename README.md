@@ -1,4 +1,4 @@
-## Student Attendance & Fee Management System (Django)
+## Student Information System (Django)
 
 A full-featured **Student Information System** built with **Django 6**, designed to help institutes manage **student profiles, attendance records, and fee payments** in one place.  
 This project provides separate dashboards for **Managers** and **Students**, with role-based access, attendance analytics, fee tracking, and in-app notifications.
@@ -133,8 +133,8 @@ This project provides separate dashboards for **Managers** and **Students**, wit
 #### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/<your-repo-name>.git
-cd <your-repo-name>
+git clone https://github.com/mangalji/Attendance_monitoring_system.git
+cd <Attendance_monitoring_system>
 ```
 
 #### 2. Create & activate a virtual environment (recommended)
