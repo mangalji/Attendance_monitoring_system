@@ -27,10 +27,7 @@ def user_login(request):
                         session.delete()
                 except:
                     pass
-
-            if user.is_superuser:
-                return redirect('/admin/')
-            elif hasattr(user,'managerprofile'):
+            if hasattr(user,'managerprofile'):
                 return redirect('manager_dashboard')
             elif hasattr(user,'studentprofile'):
                 return redirect('student_dashboard')
