@@ -67,13 +67,13 @@ def upload_attendance(request):
                             out_time_str = times[1] if len(times) > 1 else "19:30"
                             
                             fmt = "%H:%M"
-                            t_in_dt = datetime.strptime(in_time_str, fmt)
-                            t_out_dt = datetime.strptime(out_time_str, fmt)
+                            time_in_dt = datetime.strptime(in_time_str, fmt)
+                            time_out_dt = datetime.strptime(out_time_str, fmt)
                             
-                            t_in = t_in_dt.time()
-                            t_out = t_out_dt.time()
+                            time_in = time_in_dt.time()
+                            time_out = time_out_dt.time()
                             
-                            duration = t_out_dt - t_in_dt
+                            duration = time_out_dt - time_in_dt
                             hours = duration.total_seconds() / 3600
 
                             year_month = month.split('-')
