@@ -311,11 +311,11 @@ def student_view_attendance(request):
     attendance_data = []
 
     if show_data:
-        # Date List
+
         delta = end_date - start_date
         for i in range(delta.days + 1):
             date_list.append(start_date + timedelta(days=i))
-        # Fetch Records for this student only
+
         records = AttendanceRecord.objects.filter(student=student, date__range=[start_date, end_date])
         records_by_date = {r.date: r for r in records}
         daily_data = []

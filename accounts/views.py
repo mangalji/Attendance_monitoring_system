@@ -16,13 +16,18 @@ def user_login(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         user = authenticate(request,username=email,password=password)
+        print(email)
+        print(password)
+        print(user)
         if user:
             login(request,user)
 
             current_session_key = request.session.session_key
             for session in Session.objects.all():
+                print(session)
                 try:
                     data = session.get_decoded()
+                    print(data)
                     if data.get('_auth_user_id') == str(user.id) and session.session_key != current_session_key:
                         session.delete()
                 except:
@@ -60,8 +65,12 @@ def add_student(request):
 
     if request.method == 'POST':
         user_form = StudentUserForm(request.POST,prefix='student_user')
+        print(user_form)
         profile_form = StudentProfileForm(request.POST,request.FILES,prefix='profile')
+        print(profile_form)
         parent_form = ParentForm(request.POST,prefix='parent')
+        print(parent_form)
+
 
         if user_form.is_valid() and profile_form.is_valid() and parent_form.is_valid():
             user = user_form.save(commit=False)
@@ -70,6 +79,7 @@ def add_student(request):
 
             student = profile_form.save(commit=False)
             student.user = user
+            print(student)
             student.added_by = manager
             student.save()
 
@@ -100,6 +110,7 @@ def view_students(request):
 @manager_required
 def student_detail(request,pk):
     student = get_object_or_404(StudentProfile,pk=pk)
+    print(student)
     return render(request,'manager/student_detail.html',{'student':student})
     
 @login_required
@@ -108,6 +119,7 @@ def reset_student_password(request,pk):
     student = get_object_or_404(StudentProfile,pk=pk)
     if request.method == 'POST':
         new_password = request.POST.get('new_password')
+        print(new_password)
         if new_password:
             try:
                 from django.contrib.auth.password_validation import validate_password
