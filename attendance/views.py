@@ -91,8 +91,8 @@ def upload_attendance(request):
                                 student=student,
                                 date=record_date,
                                 defaults={
-                                    'in_time': t_in,
-                                    'out_time': t_out,
+                                    'in_time': time_in,
+                                    'out_time': time_out,
                                     'total_hours': hours
                                 }
                             )
