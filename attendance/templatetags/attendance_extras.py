@@ -16,7 +16,7 @@ def format_duration(value):
         
         hours_float = float(value)
         if hours_float == 0:
-            return "-" # Or "0 hours"
+            return "-" 
             
         hours = int(hours_float)
         minutes = int(round((hours_float - hours) * 60))
@@ -27,8 +27,7 @@ def format_duration(value):
             
         parts = []
         if hours > 0:
-            parts.append(f"{hours} hours") # or "hour" if 1? User said "10hours". I'll stick to plural/singular logic or just hours.
-            # User example: "4 hours", "10hours".
+            parts.append(f"{hours} hours") 
         
         if minutes > 0:
             parts.append(f"{minutes} minutes")

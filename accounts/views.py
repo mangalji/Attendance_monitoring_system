@@ -109,6 +109,15 @@ def reset_student_password(request,pk):
     if request.method == 'POST':
         new_password = request.POST.get('new_password')
         if new_password:
+            try:
+                from django.contrib.auth.password_validation import validate_password
+                from django.core.exceptions import ValidationError
+                validate_password(new_password, user=student.user)
+            except ValidationError as e:
+                for error in e.messages:
+                    messages.error(request, error)
+                return render(request,'manager/reset_student_password.html',{'student':student})
+
             user = student.user
             user.set_password(new_password)
             user.save()

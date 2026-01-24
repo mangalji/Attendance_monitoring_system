@@ -19,6 +19,16 @@ class StudentUserForm(forms.ModelForm):
             self.fields['password'].required = False
             self.fields['name'].initial = self.instance.first_name
 
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            from django.contrib.auth.password_validation import validate_password
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                raise ValidationError(e.messages)
+        return password
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.first_name = self.cleaned_data['name']
@@ -110,6 +120,16 @@ class StudentForgotPasswordForm(forms.Form):
     roll_no = forms.CharField(max_length=10,required=True, label="Registeret Roll Number")
     new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
     confirm_password = forms.CharField(widget=forms.PasswordInput, label="Confirm Password")
+
+    def clean_new_password(self):
+        password = self.cleaned_data.get('new_password')
+        if password:
+            from django.contrib.auth.password_validation import validate_password
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                raise ValidationError(e.messages)
+        return password
 
     def clean(self):
         cleaned_data = super().clean()
