@@ -2,3 +2,7 @@
 # credentials_admin.txt
 credentials.txt
 media
+accounts/migrations/
+accounts/__pycache__
+accounts/__pycache__/
+student_info_system/__pycache__/

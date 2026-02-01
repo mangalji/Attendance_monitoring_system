@@ -7,6 +7,17 @@ from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+DOMAIN_CHOICES = [
+        ("Web Developer","Web Developer"),
+        ("App Developer","App Developer"),
+        ("FrontEnd Developer","FrontEnd Developer"),
+        ("BackEnd Developer","BackEnd Developer"),
+        ("Data Analyst", "Data Analyst"),
+        ("Data Scientist", "Data Scientist"),
+        ("Tester","Tester"),
+        ("DevOps","DevOps"),
+]
+
 phone_validator = RegexValidator(
     regex=r'^\d{10}$',
     message="Phone number must be exactly 10 digits."
@@ -42,7 +53,8 @@ class StudentProfile(models.Model):
     pincode = models.CharField(max_length=10,blank=True,null=True, validators=[pincode_validator])
     dob = models.DateField(blank=True,null=True)
     last_qualification = models.CharField(max_length=100,blank=True,null=True)
-    domain = models.CharField(max_length=50,blank=True,null=True)
+    # domain = models.CharField(max_length=50,blank=True,null=True)
+    domain = models.CharField(max_length=20,choices=DOMAIN_CHOICES,default="Web Developer")
     joining_date = models.DateField(blank=True,null=True,validators=[validate_not_future])
     photo = models.ImageField(upload_to='student_photos/',blank=True,null=True)
     is_active = models.BooleanField(default=True)
