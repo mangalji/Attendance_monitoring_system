@@ -1,8 +1,10 @@
 .venv
-# credentials_admin.txt
 credentials.txt
 media
-accounts/migrations/
+accounts/migrations/__pycache__
 accounts/__pycache__
-accounts/__pycache__/
-student_info_system/__pycache__/
+attendance/__pycache__
+attendance/migrations/__pycache__
+fees/migrations/__pycache__
+fees/__pycache__
+student_info_system/__pycache__

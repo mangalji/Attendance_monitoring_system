@@ -1,8 +1,24 @@
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
-from .models import StudentProfile, Parent
-from .models import ManagerProfile
+from .models import Student, Parent
+from .models import Manager
+
+
+User = get_user_model()
+
+class CustomUserCreationForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ("email",)
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.username = user.email
+        if commit:
+            user.save()
+        return user
 
 
 class StudentUserForm(forms.ModelForm):
@@ -30,23 +46,23 @@ class StudentUserForm(forms.ModelForm):
         return password
 
     def save(self, commit=True):
-        user = super().save(commit=False)
-        user.first_name = self.cleaned_data['name']
-        user.last_name = ''
+        student_user = super().save(commit=False)
+        student_user.first_name = self.cleaned_data['name']
+        student_user.last_name = ''
         
         password = self.cleaned_data.get('password')
         if password:
-            user.set_password(password)
+            student_user.set_password(password)
             
         if commit:
-            user.save()
-        return user
+            student_user.save()
+        return student_user
 
 
 class StudentProfileForm(forms.ModelForm):
 
     class Meta:
-        model = StudentProfile
+        model = Student
         exclude = ('user', 'added_by', 'is_active', 'is_placed')
         widgets = {
             'dob': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
@@ -87,7 +103,7 @@ class ManagerCreationForm(forms.ModelForm):
     phone = forms.CharField(max_length=15)
 
     class Meta:
-        model = ManagerProfile
+        model = Manager
         fields = ['phone']
 
     def clean_phone(self):
@@ -141,12 +157,12 @@ class StudentForgotPasswordForm(forms.Form):
 
         if email or phone or roll_no:
             try:
-                student = StudentProfile.objects.select_related('user').get(
+                student = Student.objects.select_related('user').get(
                     user__email = email,
                     phone = phone,
                     roll_no = roll_no
                 )
-            except StudentProfile.DoesNotExist:
+            except Student.DoesNotExist:
                 raise ValidationError("Invalid email, phone number or roll number")
             cleaned_data['student'] = student
 
@@ -155,3 +171,24 @@ class StudentForgotPasswordForm(forms.Form):
             raise ValidationError("new password nad confirm password do not match")
 
         return cleaned_data
+
+class StudentAdminCreationForm(forms.ModelForm):
+    email = forms.EmailField(required=True)
+    password = forms.CharField(widget=forms.PasswordInput, required=False)
+    
+    class Meta:
+        model = Student
+        exclude = ('user', 'added_by', 'is_active', 'is_placed')
+
+    def save(self, commit=True):
+        student = super().save(commit=False)        
+        return student
+
+    def clean_email(self):
+         email = self.cleaned_data.get('email')
+         if self.instance.pk and self.instance.user.email != email:
+             if User.objects.filter(email=email).exists():
+                 raise ValidationError("Email already exists")
+         elif not self.instance.pk and User.objects.filter(email=email).exists():
+             raise ValidationError("Email already exists")
+         return email

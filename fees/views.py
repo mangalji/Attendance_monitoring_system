@@ -2,15 +2,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from accounts.decorators import manager_required, student_required
-from accounts.models import StudentProfile, Notification
+from accounts.models import Student, Notification
 from .models import FeeRecord
 
 @login_required
 def fee_manager(request):
-    if not (request.user.is_superuser or hasattr(request.user, 'managerprofile')):
+    if not (request.user.is_superuser or hasattr(request.user, 'manager')):
         return redirect('student_dashboard')
     
-    students = list(StudentProfile.objects.select_related('fee_record', 'user').all())
+    students = list(Student.objects.select_related('fee_record', 'user').all())
     
 
     def studnet_sorting(s):
@@ -29,12 +29,12 @@ def fee_manager(request):
 
 @login_required
 def update_fee(request, student_id):
-    if not (request.user.is_superuser or hasattr(request.user,'managerprofile')):
+    if not (request.user.is_superuser or hasattr(request.user,'manager')):
         return redirect('student_dashboard')
 
     if request.method == 'POST':
         try:
-            student = StudentProfile.objects.get(id=student_id)
+            student = Student.objects.get(id=student_id)
             fee_record, created = FeeRecord.objects.get_or_create(student=student)
             
             fee_record.total_fees = float(request.POST.get('total_fees', 0) or 0)
@@ -63,10 +63,10 @@ def update_fee(request, student_id):
 
 @login_required
 def send_fee_reminder(request,student_id):
-    if not(request.user.is_superuser or hasattr(request.user, 'managerprofile')):
+    if not(request.user.is_superuser or hasattr(request.user, 'manager')):
         return redirect('student_dashboard')
     
-    student = get_object_or_404(StudentProfile,id=student_id)
+    student = get_object_or_404(Student,id=student_id)
     Notification.objects.create(
         recipient = student.user,
         message = "reminder! plese pay your pending fees as soon as possible.",
@@ -80,8 +80,8 @@ def send_fee_reminder(request,student_id):
 @student_required
 def student_view_fees(request):
     try:
-        student = request.user.studentprofile
-    except StudentProfile.DoesNotExist:
+        student = request.user.student
+    except Student.DoesNotExist:
         messages.error(request,'student profile not found')
         return redirect('student_dashboard')
     

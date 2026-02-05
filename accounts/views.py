@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
-from .models import StudentProfile, ManagerProfile, Parent, Notification
+from .models import Student, Manager, Parent, Notification
 from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfEditForm, StudentForgotPasswordForm
 from .decorators import manager_required, student_required
 from django.contrib.sessions.models import Session
@@ -32,10 +32,12 @@ def user_login(request):
                         session.delete()
                 except:
                     pass
-            if hasattr(user,'managerprofile'):
+            if hasattr(user,'manager'):
                 return redirect('manager_dashboard')
-            elif hasattr(user,'studentprofile'):
+            elif hasattr(user,'student'):
                 return redirect('student_dashboard')
+            elif user.is_superuser:
+                return redirect('/admin/')
             else:
                 messages.error(request,'you are not authorised to login')
                 logout(request)
@@ -61,62 +63,62 @@ def manager_dashboard(request):
 @login_required
 @manager_required
 def add_student(request):
-    manager = get_object_or_404(ManagerProfile,user=request.user)
+    manager = get_object_or_404(Manager,user=request.user)
 
     if request.method == 'POST':
-        user_form = StudentUserForm(request.POST,prefix='student_user')
-        print(user_form)
-        profile_form = StudentProfileForm(request.POST,request.FILES,prefix='profile')
-        print(profile_form)
-        parent_form = ParentForm(request.POST,prefix='parent')
-        print(parent_form)
+        student_user_form = StudentUserForm(request.POST,prefix='student_user')
+        print(student_user_form)
+        student_profile_form = StudentProfileForm(request.POST,request.FILES,prefix='profile')
+        print(student_profile_form)
+        student_parent_form = ParentForm(request.POST,prefix='parent')
+        print(student_parent_form)
 
 
-        if user_form.is_valid() and profile_form.is_valid() and parent_form.is_valid():
-            user = user_form.save(commit=False)
-            user.username = user.email
-            user.save()
+        if student_user_form.is_valid() and student_profile_form.is_valid() and student_parent_form.is_valid():
+            student_user = student_user_form.save(commit=False)
+            student_user.username = student_user.email
+            student_user.save()
 
-            student = profile_form.save(commit=False)
-            student.user = user
-            print(student)
-            student.added_by = manager
-            student.save()
+            student_profile = student_profile_form.save(commit=False)
+            student_profile.user = student_user
+            print(student_profile)
+            student_profile.added_by = manager
+            student_profile.save()
 
-            parent = parent_form.save(commit=False)
-            parent.student = student
-            parent.save()
+            student_parent = student_parent_form.save(commit=False)
+            student_parent.student = student_profile
+            student_parent.save()
 
             messages.success(request,'Student added successfully')
             return redirect('view_students')
     else:
-        user_form = StudentUserForm(prefix='student_user')
-        profile_form = StudentProfileForm(prefix='profile')
-        parent_form = ParentForm(prefix='parent')
+        student_user_form = StudentUserForm(prefix='student_user')
+        student_profile_form = StudentProfileForm(prefix='profile')
+        student_parent_form = ParentForm(prefix='parent')
 
     return render(request,'manager/add_student.html',{
-        'user_form':user_form,
-        'profile_form':profile_form,
-        'parent_form':parent_form
+        'user_form':student_user_form,
+        'profile_form':student_profile_form,
+        'parent_form':student_parent_form
     })
     
 @login_required
 @manager_required
 def view_students(request):
-    students = StudentProfile.objects.select_related('user')
+    students = Student.objects.select_related('user')
     return render(request,'manager/view_student.html',{'students':students})
 
 @login_required
 @manager_required
 def student_detail(request,pk):
-    student = get_object_or_404(StudentProfile,pk=pk)
+    student = get_object_or_404(Student,pk=pk)
     print(student)
     return render(request,'manager/student_detail.html',{'student':student})
     
 @login_required
 @manager_required
 def reset_student_password(request,pk):
-    student = get_object_or_404(StudentProfile,pk=pk)
+    student = get_object_or_404(Student,pk=pk)
     if request.method == 'POST':
         new_password = request.POST.get('new_password')
         print(new_password)
@@ -142,7 +144,7 @@ def reset_student_password(request,pk):
 @login_required
 @student_required
 def student_dashboard(request):
-    student = get_object_or_404(StudentProfile,user=request.user)
+    student = get_object_or_404(Student,user=request.user)
     return render(request,'student/dashboard.html',{
         'student':student
     })
@@ -150,7 +152,7 @@ def student_dashboard(request):
 @login_required
 @student_required
 def edit_student_profile(request):
-    student = get_object_or_404(StudentProfile, user=request.user)
+    student = get_object_or_404(Student, user=request.user)
 
     if request.method == 'POST':
         form = StudentSelfEditForm(request.POST, request.FILES, instance=student)
@@ -166,7 +168,7 @@ def edit_student_profile(request):
 @login_required
 @manager_required
 def edit_student_by_manager(request, pk):
-    student = get_object_or_404(StudentProfile, pk=pk)
+    student = get_object_or_404(Student, pk=pk)
     user = student.user
     try:
         parent = student.parent
@@ -204,7 +206,7 @@ def edit_student_by_manager(request, pk):
 @login_required
 @manager_required
 def delete_student(request,pk):
-    student = get_object_or_404(StudentProfile,pk=pk)
+    student = get_object_or_404(Student,pk=pk)
     user = student.user
 
     if request.method == 'POST':

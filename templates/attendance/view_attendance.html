@@ -41,7 +41,6 @@
 {% endif %}
 <h3>View Attendance</h3>
 
-<!-- Filters -->
 <form method="get" style="margin-bottom: 20px;">
     <label>Start Date: <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}"></label>
     <label>End Date: <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}"></label>
@@ -77,7 +76,6 @@
                     {% for cell in row.daily_data %}
                     <td style="--bg-color: {{ cell.status_color }}; background-color: var(--bg-color);"
                         title="{{ cell.date }}: {{ cell.hours|floatformat:2 }} hrs">
-                        <!-- Tooltip logic is in title attribute -->
                         <span style="visibility: hidden;">{{ cell.hours }}</span>
                     </td>
                     {% endfor %}
@@ -150,7 +148,6 @@
 </script>
 
 <br>
-<!-- Buttons for future implementation -->
 <form action="{% url 'download_attendance_report' %}" method="get" style="display:inline;">
     <input type="hidden" name="month" value="{{ month_str }}">
     <input type="hidden" name="start_date" value="{{ start_date|date:'Y-m-d' }}">

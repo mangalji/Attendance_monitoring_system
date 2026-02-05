@@ -1,9 +1,9 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from accounts.models import StudentProfile
+from accounts.models import Student
 
 class FeeRecord(models.Model):
-    student = models.OneToOneField(StudentProfile, on_delete=models.CASCADE, related_name='fee_record')
+    student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='fee_record')
     total_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     paid_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     

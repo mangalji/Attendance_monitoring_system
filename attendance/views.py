@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from accounts.decorators import manager_required
 from .models import AttendanceRecord
-from accounts.models import StudentProfile
+from accounts.models import Student
 import pandas as pd
 from datetime import datetime, time, timedelta
 import os
@@ -33,6 +33,7 @@ def upload_attendance(request):
             start_row = 4
 
             records_created = 0
+            errors = []
 
             for r in range(start_row,rows,3):
                 if r+2 >= rows:
@@ -47,20 +48,28 @@ def upload_attendance(request):
                     roll_no = roll_no[:-2]
 
                 try:
-                    student = StudentProfile.objects.get(roll_no=roll_no)
-                except StudentProfile.DoesNotExist:
+                    student = Student.objects.get(roll_no=roll_no)
+                except Student.DoesNotExist:
                     continue
 
                 for c in range(1,32):
                     if c>=cols:
                         break
 
+                    day_cell = df.iloc[r+1, c]
+                    if pd.isna(day_cell) or str(day_cell).strip() == "":
+                        continue
+                    
+                    try:
+                        day = int(float(day_cell))  
+                    except (ValueError, TypeError):
+                        continue  
+
                     time_str = df.iloc[r+2,c]
-                    if pd.isna(time_str):
+                    if pd.isna(time_str) or str(time_str).strip() == "":
                         continue
 
                     try:
-
                         times = str(time_str).split()
                         if len(times) >= 1:
                             in_time_str = times[0]
@@ -70,21 +79,28 @@ def upload_attendance(request):
                             time_in_dt = datetime.strptime(in_time_str, fmt)
                             time_out_dt = datetime.strptime(out_time_str, fmt)
                             
+                            if time_out_dt < time_in_dt:
+                                time_out_dt = time_out_dt + timedelta(days=1)
+                            
                             time_in = time_in_dt.time()
                             time_out = time_out_dt.time()
                             
                             duration = time_out_dt - time_in_dt
                             hours = duration.total_seconds() / 3600
+                            if hours < 0:
+                                hours = 0
+
+                            if hours > 12:
+                                hours = 12
 
                             year_month = month.split('-')
                             year = int(year_month[0])
-
-                            day = int(df.iloc[r+1, c])
                             date_month = int(year_month[1])
 
                             try:
                                 record_date = datetime(year, date_month, day).date()
                             except ValueError:
+                                print(f"Invalid date: {year}-{date_month}-{day}")
                                 continue
 
                             AttendanceRecord.objects.update_or_create(
@@ -99,28 +115,35 @@ def upload_attendance(request):
                             records_created += 1
                     
                     except Exception as e:
-                        print(f"Error parsing cell {r+2},{c}:{e}")
+                        errors.append(f"Row {r+2}, Col {c}: {str(e)}")
                         continue
 
-            messages.success(request,f"Attendance uplaoded successfully! Processed {records_created} records. ")
+            if records_created > 0:
+                messages.success(request,f"Attendance uploaded successfully! Processed {records_created} records.")
+            else:
+                messages.warning(request, "No attendance records were created. Please check the Excel format.")
+            
+            if errors:
+                print(f"Parse errors: {errors}")
+            
             return redirect('manager_dashboard')
         
         except Exception as e:
-            messages.error(request,f"error processing file: {str(e)}")
+            messages.error(request,f"Error processing file: {str(e)}")
             return redirect('upload_attendance')
         
     return render(request, 'attendance/upload_attendance.html')
 
 @login_required
 def view_attendance(request):
-    if not (request.user.is_superuser or hasattr(request.user,'managerprofile')):
+    if not (request.user.is_superuser or hasattr(request.user,'manager')):
         return redirect('student_dashboard')
     
     current_date = datetime.now().date()
     month_str = request.GET.get('month') 
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
-    students = list(StudentProfile.objects.all())
+    students = list(Student.objects.all())
     
     def sort_keys(s):
 
@@ -185,10 +208,8 @@ def view_attendance(request):
                     if h > 0:
                          row_data['total_hours'] += h
                          row_data['days_present'] += 1
-                    
                     if h >= 6.0:
-                        cell['status_color'] = '#4caf50' 
-                    else:
+                        cell['status_color'] = '#4caf50'  
                         cell['status_color'] = '#f44336' 
                 
                 row_data['daily_data'].append(cell)
@@ -213,7 +234,7 @@ def download_attendance_report(request):
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
 
-    students = list(StudentProfile.objects.all())
+    students = list(Student.objects.all())
     def sort_keys(s):
         try: return int(s.roll_no)
         except ValueError: return s.roll_no
@@ -268,8 +289,10 @@ def download_attendance_report(request):
                 if h > 0:
                      row_data['total_hours'] += h
                      row_data['days_present'] += 1
-                if h >= 6.0: cell['status_color'] = '#4caf50' 
-                elif h > 0: cell['status_color'] = '#f44336'
+                if h >= 6.0: 
+                    cell['status_color'] = '#4caf50' 
+                else: 
+                    cell['status_color'] = '#f44336' 
             
             row_data['daily_data'].append(cell)
         attendance_data.append(row_data)
@@ -282,8 +305,8 @@ def download_attendance_report(request):
 @login_required
 def student_view_attendance(request):
     try:
-        student = request.user.studentprofile
-    except StudentProfile.DoesNotExist:
+        student = request.user.student
+    except Student.DoesNotExist:
         messages.error(request, "Student profile not found.")
         return redirect('student_dashboard')
 
@@ -331,8 +354,11 @@ def student_view_attendance(request):
                 if h > 0:
                     total_hours += h
                     days_present += 1
-                if h >= 6.0: cell['status_color'] = '#4caf50'
-                elif h > 0: cell['status_color'] = '#f44336'
+
+                if h >= 6.0: 
+                    cell['status_color'] = '#4caf50'  
+                else: 
+                    cell['status_color'] = '#f44336'  
             daily_data.append(cell)
 
         attendance_data = [{

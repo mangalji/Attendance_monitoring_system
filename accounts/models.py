@@ -1,8 +1,7 @@
 from django.db import models
-
-# Create your models here.
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from datetime import date
+from django.conf import settings
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -35,17 +34,22 @@ def validate_not_future(value):
     if value and value > date.today():
         raise ValidationError("date cannot be in the future.")
 
+class User(AbstractUser):
+    email = models.EmailField(unique=True)
+    username = models.CharField(max_length=100,unique=True)
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
 
-class ManagerProfile(models.Model):
-    user = models.OneToOneField(User,on_delete=models.CASCADE)
+class Manager(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, validators=[phone_validator])
 
     def __str__(self):
-        return self.user.get_full_name() or self.user.username
+        return self.user.email
 
-class StudentProfile(models.Model):
+class Student(models.Model):
     
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     roll_no = models.IntegerField(unique=True, validators=[roll_no_validator])
     phone = models.CharField(max_length=20,blank=True, null=True, validators=[phone_validator])
     city = models.CharField(max_length=50,blank=True,null=True)
@@ -58,15 +62,15 @@ class StudentProfile(models.Model):
     joining_date = models.DateField(blank=True,null=True,validators=[validate_not_future])
     photo = models.ImageField(upload_to='student_photos/',blank=True,null=True)
     is_active = models.BooleanField(default=True)
-    added_by = models.ForeignKey(ManagerProfile, on_delete=models.SET_NULL,null=True,blank=True)
+    added_by = models.ForeignKey(Manager, on_delete=models.SET_NULL,null=True,blank=True)
     is_placed = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.user.get_full_name()} ({self.roll_no})"
+        return f"{self.user.email} - {self.roll_no} ({self.domain})"
     
 
 class Parent(models.Model):
-    student = models.OneToOneField(StudentProfile,on_delete=models.CASCADE)
+    student = models.OneToOneField(Student,on_delete=models.CASCADE)
     name = models.CharField(max_length=100, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True, validators=[phone_validator])
@@ -84,7 +88,7 @@ class Company(models.Model):
 
 
 class Placement(models.Model):
-    student = models.OneToOneField(StudentProfile, on_delete=models.CASCADE)
+    student = models.OneToOneField(Student, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True)
     placed_date = models.DateField()
 
@@ -92,7 +96,7 @@ class Placement(models.Model):
         return f"{self.student.roll_no} - {self.company.company_name}"
 
 class Notification(models.Model):
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
     message = models.TextField()
     notification_type = models.CharField(max_length=30,choices=[
         ('attendance','Attendance Update'),
@@ -105,4 +109,4 @@ class Notification(models.Model):
     created_at  =models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.recipient.username} - {self.notification_type}"
+        return f"{self.recipient.email} - {self.notification_type}"

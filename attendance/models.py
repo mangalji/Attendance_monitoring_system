@@ -2,10 +2,10 @@ from django.db import models
 
 from django.core.exceptions import ValidationError
 from datetime import date
-from accounts.models import StudentProfile
+from accounts.models import Student
 
 class AttendanceRecord(models.Model):
-    student = models.ForeignKey(StudentProfile,on_delete=models.CASCADE, related_name='attendance_records')
+    student = models.ForeignKey(Student,on_delete=models.CASCADE, related_name='attendance_records')
     date = models.DateField()
     in_time = models.TimeField(null=True,blank=True)
     out_time = models.TimeField(null=True,blank=True)
@@ -19,4 +19,4 @@ class AttendanceRecord(models.Model):
         super().save(*args,**kwargs)
 
     def __str__(self):
-        return f"{self.student.user.first_name} - {self.date}"
+        return f"{self.student.user.first_name}"
