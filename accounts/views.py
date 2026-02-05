@@ -91,10 +91,18 @@ def add_student(request):
 
             messages.success(request,'Student added successfully')
             return redirect('view_students')
+        else:
+            messages.error(request, 'There are some errors in the form data.')
+ 
     else:
         student_user_form = StudentUserForm(prefix='student_user')
         student_profile_form = StudentProfileForm(prefix='profile')
         student_parent_form = ParentForm(prefix='parent')
+        return render(request, 'manager/add_student.html', {
+                'user_form': student_user_form,
+                'profile_form': student_profile_form,
+                'parent_form': student_parent_form
+            })
 
     return render(request,'manager/add_student.html',{
         'user_form':student_user_form,

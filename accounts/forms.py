@@ -4,9 +4,66 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from .models import Student, Parent
 from .models import Manager
-
+import re
+import datetime
 
 User = get_user_model()
+
+def validate_password(value):
+    if len(value) < 8 or len(value) > 12:
+       raise ValidationError("password must be between 8 and 12 characters long.")
+    
+    if not re.search(r'[A-Z]', value):
+        raise ValidationError("Password must contain at least one uppercase letter.")
+    
+    if not re.search(r'[a-z]', value):
+        raise ValidationError("Password must contain at least one lowercase letter.")
+    
+    if not re.search(r'[0-9]', value):
+        raise ValidationError("Password must contain at least one numeric digit.")
+    
+    if not re.search(r'[@$!%*?&]', value):
+        raise ValidationError("Password must contain at least one special character.")
+    
+    return value
+
+def validate_phone(value):
+    if len(value) != 10:
+        raise ValidationError("phone number must be exactly 10 digits.")
+    
+    if not value.isdigit():
+        raise ValidationError("phone number must only contain digits.")
+    
+    if value[0] not in '56789':
+        raise ValidationError("phone number must start with a digit between 5 and 9.")
+    
+    common_patterns = ['9999999999', '8888888888', '9876543210','5555555555','6666666666','7777777777']
+    if value in common_patterns:
+        raise ValidationError("phone number is too common, please enter a valid one.")
+    
+    return value
+
+def validate_email(value):
+    if value.count('@') != 1:
+        raise ValidationError("email must contain exactly one '@' symbol")
+    
+    if value.startswith('@'):
+        raise ValidationError("email cannot start with '@'")
+    
+    if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", value):
+        raise ValidationError("enter a valid email address.")
+
+def validate_pincode(value):
+    if len(value) != 6:
+        raise ValidationError("pincode must be exactly 6 digits.")
+    if not value.isdigit():
+        raise ValidationError("pincode must be numeric.")
+    return value
+
+def validate_date_not_in_future(value):
+    if value and value > datetime.date.today():
+        raise ValidationError("date cannot be in future.")
+    return value
 
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
@@ -22,8 +79,9 @@ class CustomUserCreationForm(UserCreationForm):
 
 
 class StudentUserForm(forms.ModelForm):
-    name = forms.CharField(max_length=100, label="Full Name")
-    password = forms.CharField(widget=forms.PasswordInput)
+    name = forms.CharField(max_length=50, label="Full Name")
+    password = forms.CharField(widget=forms.PasswordInput,min_length=8,max_length=12,validators=[validate_password])
+    email = forms.EmailField(max_length=50,required=True,validators=[validate_email])
 
     class Meta:
         model = User
@@ -38,6 +96,8 @@ class StudentUserForm(forms.ModelForm):
     def clean_password(self):
         password = self.cleaned_data.get('password')
         if password:
+            if len(password) < 8:
+                raise ValidationError("password atleast min 8 charactors.")
             from django.contrib.auth.password_validation import validate_password
             try:
                 validate_password(password)
@@ -59,8 +119,12 @@ class StudentUserForm(forms.ModelForm):
         return student_user
 
 
-class StudentProfileForm(forms.ModelForm):
 
+class StudentProfileForm(forms.ModelForm):
+    phone = forms.CharField(max_length=10,validators=[validate_phone])
+    pincode = forms.CharField(max_length=6,validators=[validate_pincode])
+    dob = forms.DateField(validators=[validate_date_not_in_future], widget=forms.DateInput(attrs={'type': 'date'}))
+    joining_date = forms.DateField(validators=[validate_date_not_in_future], widget=forms.DateInput(attrs={'type': 'date'}))
     class Meta:
         model = Student
         exclude = ('user', 'added_by', 'is_active', 'is_placed')
@@ -97,10 +161,10 @@ class ParentForm(forms.ModelForm):
 
 class ManagerCreationForm(forms.ModelForm):
 
-    email = forms.EmailField(required=True)
-    password = forms.CharField(widget=forms.PasswordInput)
-    name = forms.CharField(max_length=100, label="Full Name")
-    phone = forms.CharField(max_length=15)
+    email = forms.EmailField(required=True,max_length=30)
+    password = forms.CharField(widget=forms.PasswordInput,min_length=8)
+    name = forms.CharField(max_length=50, label="Full Name")
+    phone = forms.CharField(max_length=10,min_length=10,required=True)
 
     class Meta:
         model = Manager
@@ -108,9 +172,8 @@ class ManagerCreationForm(forms.ModelForm):
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
-        if phone:
-            if not phone.isdigit() or len(phone) != 10:
-                raise ValidationError("Phone number must be exactly 10 digits.")
+        if phone.isdigit() or len(phone) != 10:
+            raise ValidationError("Phone number must be exactly only 10 digits.")
         return phone
 
     def save(self, commit=True):

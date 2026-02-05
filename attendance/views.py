@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from accounts.decorators import manager_required
@@ -115,21 +114,21 @@ def upload_attendance(request):
                             records_created += 1
                     
                     except Exception as e:
-                        errors.append(f"Row {r+2}, Col {c}: {str(e)}")
+                        errors.append(f"row {r+2}, col {c}: {str(e)}")
                         continue
 
             if records_created > 0:
-                messages.success(request,f"Attendance uploaded successfully! Processed {records_created} records.")
+                messages.success(request,f"attendance uploaded successfully! processed {records_created} records.")
             else:
-                messages.warning(request, "No attendance records were created. Please check the Excel format.")
+                messages.warning(request, "no attendance records were created.")
             
             if errors:
-                print(f"Parse errors: {errors}")
+                print(f"errors: {errors}")
             
             return redirect('manager_dashboard')
         
         except Exception as e:
-            messages.error(request,f"Error processing file: {str(e)}")
+            messages.error(request,f"error in processing file: {str(e)}")
             return redirect('upload_attendance')
         
     return render(request, 'attendance/upload_attendance.html')

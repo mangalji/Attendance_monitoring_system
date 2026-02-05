@@ -16,6 +16,11 @@ DOMAIN_CHOICES = [
         ("Tester","Tester"),
         ("DevOps","DevOps"),
 ]
+RELATION_CHOICES = [
+    ("Father","Father"),
+    ("Mother","Mother"),
+    ("Select","Select")
+]
 
 phone_validator = RegexValidator(
     regex=r'^\d{10}$',
@@ -55,7 +60,7 @@ class Student(models.Model):
     city = models.CharField(max_length=50,blank=True,null=True)
     address = models.TextField(blank=True,null=True)
     pincode = models.CharField(max_length=10,blank=True,null=True, validators=[pincode_validator])
-    dob = models.DateField(blank=True,null=True)
+    dob = models.DateField(blank=True,null=True,validators=[validate_not_future])
     last_qualification = models.CharField(max_length=100,blank=True,null=True)
     # domain = models.CharField(max_length=50,blank=True,null=True)
     domain = models.CharField(max_length=20,choices=DOMAIN_CHOICES,default="Web Developer")
@@ -74,7 +79,7 @@ class Parent(models.Model):
     name = models.CharField(max_length=100, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True, validators=[phone_validator])
-    relation = models.CharField(max_length=50, blank=True, null=True)
+    relation = models.CharField(max_length=50,choices=RELATION_CHOICES,default="Select")
 
     def __str__(self):
         return f"{self.name} - {self.student.roll_no}"
