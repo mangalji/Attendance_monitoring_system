@@ -4,66 +4,11 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from .models import Student, Parent
 from .models import Manager
+from .validators import validate_password, validate_email, validate_date_not_in_future, validate_phone, validate_pincode
 import re
 import datetime
 
 User = get_user_model()
-
-def validate_password(value):
-    if len(value) < 8 or len(value) > 12:
-       raise ValidationError("password must be between 8 and 12 characters long.")
-    
-    if not re.search(r'[A-Z]', value):
-        raise ValidationError("Password must contain at least one uppercase letter.")
-    
-    if not re.search(r'[a-z]', value):
-        raise ValidationError("Password must contain at least one lowercase letter.")
-    
-    if not re.search(r'[0-9]', value):
-        raise ValidationError("Password must contain at least one numeric digit.")
-    
-    if not re.search(r'[@$!%*?&]', value):
-        raise ValidationError("Password must contain at least one special character.")
-    
-    return value
-
-def validate_phone(value):
-    if len(value) != 10:
-        raise ValidationError("phone number must be exactly 10 digits.")
-    
-    if not value.isdigit():
-        raise ValidationError("phone number must only contain digits.")
-    
-    if value[0] not in '56789':
-        raise ValidationError("phone number must start with a digit between 5 and 9.")
-    
-    common_patterns = ['9999999999', '8888888888', '9876543210','5555555555','6666666666','7777777777']
-    if value in common_patterns:
-        raise ValidationError("phone number is too common, please enter a valid one.")
-    
-    return value
-
-def validate_email(value):
-    if value.count('@') != 1:
-        raise ValidationError("email must contain exactly one '@' symbol")
-    
-    if value.startswith('@'):
-        raise ValidationError("email cannot start with '@'")
-    
-    if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", value):
-        raise ValidationError("enter a valid email address.")
-
-def validate_pincode(value):
-    if len(value) != 6:
-        raise ValidationError("pincode must be exactly 6 digits.")
-    if not value.isdigit():
-        raise ValidationError("pincode must be numeric.")
-    return value
-
-def validate_date_not_in_future(value):
-    if value and value > datetime.date.today():
-        raise ValidationError("date cannot be in future.")
-    return value
 
 class CustomUserCreationForm(UserCreationForm):
     class Meta:

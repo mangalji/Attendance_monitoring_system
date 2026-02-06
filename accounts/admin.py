@@ -4,20 +4,6 @@ from .models import Manager, Student, Parent, Placement,Company, User
 from .forms import ManagerCreationForm, CustomUserCreationForm, StudentAdminCreationForm
 from django.contrib.auth.admin import UserAdmin
 
-# class CustomUserAdmin(UserAdmin):
-#     add_form = CustomUserCreationForm
-#     model = User
-#     add_fieldsets = (
-#         (None, {
-#             'classes': ('wide',),
-#             'fields': ('email', 'password1', 'password2'),
-#         }),
-#     )
-#     list_display = ['username','email','is_staff','is_active']
-#
-# admin.site.register(User,CustomUserAdmin) 
-
-
 @admin.register(Manager)
 class ManagerAdmin(admin.ModelAdmin):
     list_display = ('id','user','phone')
@@ -44,11 +30,9 @@ class StudentAdmin(admin.ModelAdmin):
         password = form.cleaned_data.get('password')
         
         if not change:
-            # Creating new student -> create new user
             user = User.objects.create_user(username=email, email=email, password=password)
             obj.user = user
         else:
-            # Updating existing student -> update user email
             user = obj.user
             user.email = email
             user.username = email
@@ -61,7 +45,6 @@ class StudentAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if obj:
-             # Populate email field when editing
              form.base_fields['email'].initial = obj.user.email
         return form
 

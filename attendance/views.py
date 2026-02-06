@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from accounts.decorators import manager_required
 from .models import AttendanceRecord
-from accounts.models import Student
+from accounts.models import Student, Notification
 import pandas as pd
 from datetime import datetime, time, timedelta
 import os
@@ -35,7 +35,7 @@ def upload_attendance(request):
             errors = []
 
             for r in range(start_row,rows,3):
-                if r+2 >= rows:
+                if r >= rows:
                     break
 
                 roll_no = df.iloc[r,3]
@@ -52,20 +52,11 @@ def upload_attendance(request):
                     continue
 
                 for c in range(1,32):
-                    if c>=cols:
+                    if c >=cols:
                         break
 
-                    day_cell = df.iloc[r+1, c]
-                    if pd.isna(day_cell) or str(day_cell).strip() == "":
-                        continue
-                    
-                    try:
-                        day = int(float(day_cell))  
-                    except (ValueError, TypeError):
-                        continue  
-
-                    time_str = df.iloc[r+2,c]
-                    if pd.isna(time_str) or str(time_str).strip() == "":
+                    time_str = df.iloc[r+2, c]
+                    if pd.isna(time_str):
                         continue
 
                     try:
@@ -74,18 +65,16 @@ def upload_attendance(request):
                             in_time_str = times[0]
                             out_time_str = times[1] if len(times) > 1 else "19:30"
                             
-                            fmt = "%H:%M"
-                            time_in_dt = datetime.strptime(in_time_str, fmt)
-                            time_out_dt = datetime.strptime(out_time_str, fmt)
-                            
-                            if time_out_dt < time_in_dt:
-                                time_out_dt = time_out_dt + timedelta(days=1)
+                            time_format = "%H:%M"
+                            time_in_dt = datetime.strptime(in_time_str, time_format)
+                            time_out_dt = datetime.strptime(out_time_str, time_format)
                             
                             time_in = time_in_dt.time()
                             time_out = time_out_dt.time()
                             
                             duration = time_out_dt - time_in_dt
                             hours = duration.total_seconds() / 3600
+                            
                             if hours < 0:
                                 hours = 0
 
@@ -94,6 +83,7 @@ def upload_attendance(request):
 
                             year_month = month.split('-')
                             year = int(year_month[0])
+                            day = int(df.iloc[r+1, c])
                             date_month = int(year_month[1])
 
                             try:
@@ -115,10 +105,19 @@ def upload_attendance(request):
                     
                     except Exception as e:
                         errors.append(f"row {r+2}, col {c}: {str(e)}")
+                        print(f"Error parsing cell {r+2},{c}: {e}")
                         continue
-
+            students_count = Student.objects.count()
             if records_created > 0:
-                messages.success(request,f"attendance uploaded successfully! processed {records_created} records.")
+                Notification.objects.bulk_create([
+                    Notification(
+                        recipient=s.user,
+                        message=f"Attendance for {month} has been uploaded.",
+                        notification_type='attendance'
+                    ) for s in Student.objects.select_related('user').all()
+                ])
+
+                messages.success(request,f"attendance uploaded successfully, processed {records_created} records.")
             else:
                 messages.warning(request, "no attendance records were created.")
             
@@ -209,6 +208,7 @@ def view_attendance(request):
                          row_data['days_present'] += 1
                     if h >= 6.0:
                         cell['status_color'] = '#4caf50'  
+                    elif h < 6.0:
                         cell['status_color'] = '#f44336' 
                 
                 row_data['daily_data'].append(cell)
