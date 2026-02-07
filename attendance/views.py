@@ -162,6 +162,7 @@ def view_attendance(request):
         show_data = True
     elif month_str:
         year, month_val = map(int, month_str.split('-'))
+        print(year,"--",month_val)
         start_date = datetime(year, month_val, 1).date()
         last_day = calendar.monthrange(year, month_val)[1]
         end_date = datetime(year, month_val, last_day).date()
@@ -171,8 +172,8 @@ def view_attendance(request):
     attendance_data = []
 
     if show_data:
-        delta = end_date - start_date
-        for i in range(delta.days + 1):
+        final_dates = end_date - start_date
+        for i in range(final_dates.days + 1):
             date_list.append(start_date + timedelta(days=i))
 
         records = AttendanceRecord.objects.filter(date__range=[start_date, end_date])
@@ -259,8 +260,8 @@ def download_attendance_report(request):
         end_date = target_date.replace(day=last_day)
 
     date_list = []
-    delta = end_date - start_date
-    for i in range(delta.days + 1):
+    final_dates = end_date - start_date
+    for i in range(final_dates.days + 1):
         date_list.append(start_date + timedelta(days=i))
 
 
@@ -334,8 +335,8 @@ def student_view_attendance(request):
 
     if show_data:
 
-        delta = end_date - start_date
-        for i in range(delta.days + 1):
+        final_dates = end_date - start_date
+        for i in range(final_dates.days + 1):
             date_list.append(start_date + timedelta(days=i))
 
         records = AttendanceRecord.objects.filter(student=student, date__range=[start_date, end_date])
