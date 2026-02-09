@@ -8,3 +8,5 @@ attendance/migrations/__pycache__
 fees/migrations/__pycache__
 fees/__pycache__
 student_info_system/__pycache__
+.env
+extra_details.txt 
