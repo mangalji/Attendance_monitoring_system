@@ -16,19 +16,26 @@ def validate_password(value):
             f"Password must be {PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} characters long."
         )
     
-    # if the chars are not in A-Z this error is raise
+    # atleast 1 char will be capital
     if not re.search(r'[A-Z]', value):
         raise ValidationError(
             "Password must contain at least one uppercase letter."
         )
+    
+    # atleast 1 small char is required
     if not re.search(r'[a-z]', value):
         raise ValidationError(
             "Password must contain at least one lowercase letter."
         )
+    
+    # atleast 1 number is required
     if not re.search(r'[0-9]', value):
         raise ValidationError(
-            "Password must contain at least one numeric digit."
+            "Password must contain" \
+            " at least one numeric digit."
         )
+    
+    # atleast 1 special chars required
     if not re.search(PASSWORD_SPECIAL_CHARS, value):
         raise ValidationError(
             "Password must contain at least one special character (@$!%*?&)."
@@ -36,6 +43,7 @@ def validate_password(value):
     
     return value
 
+# this method is for validate the phone
 def validate_phone(value):
     if len(value) != 10:
         raise ValidationError("phone number must be exactly 10 digits.")
