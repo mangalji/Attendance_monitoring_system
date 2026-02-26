@@ -8,28 +8,40 @@ from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfE
 from .decorators import manager_required, student_required
 from django.contrib.sessions.models import Session
 
+# our first view for user login
 def user_login(request):
+
+    # here we check the request is GET 
     if request.method == 'GET' and request.user.is_authenticated:
         messages.info(request,'You are already logged in, login again to switch user')
 
+    # here we check the request type is post
     if request.method == 'POST':
+        
+        # get the data from the user 
         email = request.POST.get('email')
         password = request.POST.get('password')
         user = authenticate(request,username=email,password=password)
         print(email)
         print(password)
         print(user)
+
+        # here i check the user is exists
         if user:
             login(request,user)
 
+            # here i check the current user's another session is exists or not
             current_session_key = request.session.session_key
             for session in Session.objects.all():
                 print(session)
+
+                # here i use error handling here
                 try:
                     data = session.get_decoded()
                     print(data)
                     if data.get('_auth_user_id') == str(user.id) and session.session_key != current_session_key:
                         session.delete()
+                # here i pass the any exceptions
                 except:
                     pass
             if hasattr(user,'manager'):
