@@ -2,15 +2,21 @@ from django.core.exceptions import ValidationError
 import re
 import datetime
 
+# these are the settings for password validation
 PASSWORD_MIN_LENGTH = 8
 PASSWORD_MAX_LENGTH = 12
 PASSWORD_SPECIAL_CHARS = r'[@$!%*?&]'
 
+# it's our function for the business logic
 def validate_password(value):
+
+    # if the length is not valid this error is raise
     if len(value) < PASSWORD_MIN_LENGTH or len(value) > PASSWORD_MAX_LENGTH:
         raise ValidationError(
             f"Password must be {PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} characters long."
         )
+    
+    # if the chars are not in A-Z this error is raise
     if not re.search(r'[A-Z]', value):
         raise ValidationError(
             "Password must contain at least one uppercase letter."
