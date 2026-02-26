@@ -44,38 +44,56 @@ def user_login(request):
                 # here i pass the any exceptions
                 except:
                     pass
+            
+            # now i check the user's permission:
+
             if hasattr(user,'manager'):
+                # if he/she is manager this return works
                 return redirect('manager_dashboard')
             elif hasattr(user,'student'):
+
+                # if he/she is student this return works
                 return redirect('student_dashboard')
             elif user.is_superuser:
+
+                # if he/she is admin or superuser this return works
                 return redirect('/admin/')
             else:
+                # if you are nothing from the above, you are not authorized to login
                 messages.error(request,'you are not authorised to login')
+                
+                # we use logout built in method to logout from the current session
                 logout(request)
+        
+        # if usee's credentials are not matching return the msg
         else:
             messages.error(request,'invalid email or password')
 
+    # we send the response headers to the client
     response = render(request,'login.html')
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     return response
 
+# this method requires authenticated users
 @login_required
 def user_logout(request):
     logout(request)
     return redirect('login')
 
+# this is a manager's dashboard page
 @login_required
 @manager_required
 def manager_dashboard(request):
     return render(request,'manager/dashboard.html')
 
+# this is for adding the students
 @login_required
 @manager_required
 def add_student(request):
     manager = get_object_or_404(Manager,user=request.user)
+
 
     if request.method == 'POST':
         student_user_form = StudentUserForm(request.POST,prefix='student_user')
@@ -85,7 +103,7 @@ def add_student(request):
         student_parent_form = ParentForm(request.POST,prefix='parent')
         print(student_parent_form)
 
-
+        # if the user details is valid that user will be saved
         if student_user_form.is_valid() and student_profile_form.is_valid() and student_parent_form.is_valid():
             student_user = student_user_form.save(commit=False)
             student_user.username = student_user.email
