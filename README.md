@@ -5,7 +5,7 @@ This project provides separate dashboards for **Managers** and **Students**, wit
 
 ---
 
-### ✨ Features
+###  Features
 
 - **Role-based Authentication**
   - Login using **email and password**
@@ -79,7 +79,7 @@ This project provides separate dashboards for **Managers** and **Students**, wit
 
 ---
 
-### 🏗️ Project Structure (High Level)
+###  Project Structure (High Level)
 
 - `student_info_system/`
   - Core project settings, URLs, WSGI/ASGI configuration
@@ -114,7 +114,7 @@ This project provides separate dashboards for **Managers** and **Students**, wit
 
 ---
 
-### 🛠️ Tech Stack
+###  Tech Stack
 
 - **Backend**: Django 6.x, Python 3.x
 - **Database**: SQLite (default, easy to switch to PostgreSQL/MySQL)
@@ -128,7 +128,7 @@ This project provides separate dashboards for **Managers** and **Students**, wit
 
 ---
 
-### 🚀 Getting Started
+###  Getting Started
 
 #### 1. Clone the repository
 
@@ -174,7 +174,7 @@ Then open `http://127.0.0.1:8000/` in your browser.
 
 ---
 
-### 🔐 Default URL Overview
+###  Default URL Overview
 
 - **Root** (`/`)
   - Redirects:
@@ -206,7 +206,7 @@ Then open `http://127.0.0.1:8000/` in your browser.
 
 ---
 
-### 📥 Attendance Upload Format (Excel)
+###  Attendance Upload Format (Excel)
 
 - Designed for **monthly attendance** import.
 - The view:
@@ -223,7 +223,7 @@ You can adapt the Excel format or logic in `attendance/views.py` as needed.
 
 ---
 
-### 🔔 Notifications & Fee Reminders
+###  Notifications & Fee Reminders
 
 - Whenever fees are updated:
   - A **Notification** is created for the student:  
@@ -234,7 +234,7 @@ You can adapt the Excel format or logic in `attendance/views.py` as needed.
 
 ---
 
-### 🔐 Forgot Password Flow (Student)
+###  Forgot Password Flow (Student)
 
 - Accessible from the **“Forgot Password”** page (e.g., `/student/forgot_password/`).
 - Student must enter:
@@ -246,7 +246,7 @@ You can adapt the Excel format or logic in `attendance/views.py` as needed.
 
 ---
 
-### ✅ Possible Improvements
+###  Possible Improvements
 
 - Add email or SMS integration for notifications and fee reminders.
 - Replace SQLite with PostgreSQL for production.
@@ -256,7 +256,7 @@ You can adapt the Excel format or logic in `attendance/views.py` as needed.
 
 ---
 
-### 🧾 License
+###  License
 
 You can add a license section here, for example:
 
