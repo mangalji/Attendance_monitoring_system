@@ -14,9 +14,9 @@ from django.http import FileResponse
 from .utils import generate_attendance_pdf
 from django.core.files.storage import default_storage
 
-
-@login_required
-@manager_required
+# this is views is for uplaoding the attendence
+@login_required             # it means this feature available for only authenticated user
+@manager_required           # it means this is only used by manager
 def upload_attendance(request):
     if request.method == 'POST':
         excel_file = request.FILES.get('attendance_file')
@@ -132,6 +132,7 @@ def upload_attendance(request):
         
     return render(request, 'attendance/upload_attendance.html')
 
+# this view attendence features requires only authenticated user whether it could be manager/student doesn't matter
 @login_required
 def view_attendance(request):
     if not (request.user.is_superuser or hasattr(request.user,'manager')):
@@ -226,8 +227,8 @@ def view_attendance(request):
     }
     return render(request, 'attendance/view_attendance.html', context)
 
+# this download attendence feature also need only authenticated user
 @login_required
-# @manager_required
 def download_attendance_report(request):
     current_date = datetime.now().date()
     month_str = request.GET.get('month')
@@ -302,6 +303,7 @@ def download_attendance_report(request):
     
     return FileResponse(pdf_buffer, as_attachment=True, filename=f"Attendance_Report_{start_date}_{end_date}.pdf")
 
+# this also need authenticated user
 @login_required
 def student_view_attendance(request):
     try:
