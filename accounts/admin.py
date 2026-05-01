@@ -4,6 +4,7 @@ from .models import Manager, Student, Parent, Placement,Company, User
 from .forms import ManagerCreationForm, CustomUserCreationForm, StudentAdminCreationForm
 from django.contrib.auth.admin import UserAdmin
 
+#admin work for manager details
 @admin.register(Manager)
 class ManagerAdmin(admin.ModelAdmin):
     list_display = ('id','user','phone')
@@ -13,7 +14,7 @@ class ManagerAdmin(admin.ModelAdmin):
             return ManagerCreationForm
         return super().get_form(request,obj,**kwargs)
     
-
+#admin work for student details
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     form = StudentAdminCreationForm
@@ -48,15 +49,18 @@ class StudentAdmin(admin.ModelAdmin):
              form.base_fields['email'].initial = obj.user.email
         return form
 
+#admin interface for parent details
 @admin.register(Parent)
 class ParentAdmin(admin.ModelAdmin):
     list_display = ('student','name','relation','phone')
 
+#admin interface for company details
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('company_name', 'job_location')
 
 
+#admin interface for placement details
 @admin.register(Placement)
 class PlacementAdmin(admin.ModelAdmin):
     list_display = ('student', 'company', 'placed_date')
