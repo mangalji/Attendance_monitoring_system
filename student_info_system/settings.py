@@ -78,7 +78,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
         },
-    },
+i    },
 ]
 
 WSGI_APPLICATION = 'student_info_system.wsgi.application'
@@ -89,7 +89,7 @@ WSGI_APPLICATION = 'student_info_system.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get("ENGINE"),
+        'ENGINE': django.db.backends.mysql,
         'NAME': os.environ.get("NAME"),
         'HOST' : os.environ.get("HOST"),
         'USER' : os.environ.get("USER"),
