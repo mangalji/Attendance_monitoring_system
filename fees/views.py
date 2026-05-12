@@ -1,32 +1,30 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from accounts.decorators import manager_required, student_required
 from accounts.models import Student, Notification
 from .models import FeeRecord
 from django.views.decorators.http import require_POST
+
+
+def paginate(request, queryset, per_page=25):
+    paginator = Paginator(queryset, per_page)
+    return paginator.get_page(request.GET.get('page'))
 
 @login_required
 def fee_manager(request):
     if not (request.user.is_superuser or hasattr(request.user, 'manager')):
         return redirect('student_dashboard')
     
-    students = list(Student.objects.select_related('fee_record', 'user').all())
-    
+    students_qs = Student.objects.select_related('user', 'fee_record').order_by('roll_no')
+    students = paginate(request, students_qs, per_page=25)
 
-    def studnet_sorting(s):
-        try:
-            return int(s.roll_no)
-        except ValueError:
-            return s.roll_no
-
-    students.sort(key=studnet_sorting)
-     
-    for student in students:
+    for student in students.object_list:
         if not hasattr(student, 'fee_record'):
             FeeRecord.objects.get_or_create(student=student)
             
-    return render(request, 'fees/fee_manager.html', {'students': students})
+    return render(request, 'fees/fee_manager.html', {'students': students, 'page_obj': students})
 
 @login_required
 @require_POST

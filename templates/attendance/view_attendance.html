@@ -96,7 +96,7 @@
 <div id="table-view" style="display: none;">
     <h4>Detailed Table</h4>
     <table border="1" cellpadding="5" style="width: 100%; border-collapse: collapse;">
-        <thead>
+            <thead>
             <tr>
                 <th>Name</th>
                 <th>Roll No</th>
@@ -106,8 +106,8 @@
                 <th>Total Hrs</th>
                 <th>Days Present</th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             {% for row in attendance_data %}
             <tr>
                 <td>{{ row.student.user.first_name }}</td>
@@ -129,6 +129,18 @@
     </table>
 </div>
 
+{% if attendance_page.has_other_pages %}
+<div style="margin: 15px 0;">
+    {% if attendance_page.has_previous %}
+    <a href="?page={{ attendance_page.previous_page_number }}{% if month_str %}&month={{ month_str }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}">Previous</a>
+    {% endif %}
+    <span style="margin: 0 10px;">Page {{ attendance_page.number }} of {{ attendance_page.paginator.num_pages }}</span>
+    {% if attendance_page.has_next %}
+    <a href="?page={{ attendance_page.next_page_number }}{% if month_str %}&month={{ month_str }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+
 <script>
     function toggleView() {
         var heatmap = document.getElementById('heatmap-view');
@@ -148,7 +160,8 @@
 </script>
 
 <br>
-<form action="{% url 'download_attendance_report' %}" method="get" style="display:inline;">
+<form action="{% url 'download_attendance_report' %}" method="post" style="display:inline;">
+    {% csrf_token %}
     <input type="hidden" name="month" value="{{ month_str }}">
     <input type="hidden" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
     <input type="hidden" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
@@ -157,6 +170,21 @@
         PDF Report</button>
 </form>
 <button disabled title="Coming Soon">Send Report to Parents</button>
+<div style="margin-top: 20px;">
+    <h4>Recent Export Jobs</h4>
+    <ul>
+        {% for job in export_jobs %}
+        <li>
+            {{ job.created_at|date:"d M Y H:i" }} - {{ job.status }} - {{ job.records_processed }} records
+            {% if job.output_file %}
+            <a href="{% url 'download_attendance_job_file' job.id %}">Download</a>
+            {% endif %}
+        </li>
+        {% empty %}
+        <li>No export jobs yet.</li>
+        {% endfor %}
+    </ul>
+</div>
 {% else %}
 <div style="padding: 40px; text-align: center; border: 2px dashed #ddd; border-radius: 8px; margin-top: 20px;">
     <p style="color: #666; font-size: 1.1em;">Please select a date range or month above and click <strong>Show</strong>

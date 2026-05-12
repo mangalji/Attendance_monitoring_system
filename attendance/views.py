@@ -1,18 +1,16 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from accounts.decorators import manager_required
-from .models import AttendanceRecord
-from accounts.models import Student, Notification
+from django.views.decorators.http import require_POST
+from .models import AttendanceRecord, AttendanceJob
+from accounts.models import Student
 from django.core.exceptions import ValidationError
-import pandas as pd
-from datetime import datetime, time, timedelta
-import calendar
-from collections import defaultdict
+import os
 from django.http import FileResponse
-from .utils import generate_attendance_pdf
-
-MAX_ATTENDANCE_REPORT_DAYS = 92
+from .reporting import parse_attendance_range, build_attendance_summary, build_student_attendance_summary
+from .jobs import enqueue_attendance_job
 
 def validate_excel_file(uploaded_file):
     max_size = 5 * 1024 * 1024
@@ -22,30 +20,6 @@ def validate_excel_file(uploaded_file):
         raise ValidationError("Attendance file size cannot exceed 5 MB.")
     if not uploaded_file.name.lower().endswith(allowed_extensions):
         raise ValidationError("Only Excel files (.xlsx, .xls) are allowed.")
-
-def parse_attendance_range(request):
-    current_date = datetime.now().date()
-    month_str = request.GET.get('month')
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
-
-    if start_date_str and end_date_str:
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-    elif month_str:
-        year, month = map(int, month_str.split('-'))
-        start_date = datetime(year, month, 1).date()
-        last_day = calendar.monthrange(year, month)[1]
-        end_date = datetime(year, month, last_day).date()
-    else:
-        return None, None, month_str
-
-    if end_date < start_date:
-        raise ValidationError("End date cannot be before start date.")
-    if (end_date - start_date).days + 1 > MAX_ATTENDANCE_REPORT_DAYS:
-        raise ValidationError(f"Date range cannot exceed {MAX_ATTENDANCE_REPORT_DAYS} days.")
-
-    return start_date, end_date, month_str
 
 # this is views is for uplaoding the attendence
 @login_required             # it means this feature available for only authenticated user
@@ -61,128 +35,43 @@ def upload_attendance(request):
 
         try:
             validate_excel_file(excel_file)
-            df = pd.read_excel(excel_file,header=None)
-            rows, cols = df.shape
-            start_row = 4
-
-            records_created = 0
-            errors = []
-
-            for r in range(start_row,rows,3):
-                if r >= rows:
-                    break
-
-                roll_no = df.iloc[r,3]
-                if pd.isna(roll_no) or str(roll_no).strip() == "":
-                    continue
-
-                roll_no = str(roll_no).strip()
-                if roll_no.endswith('.0'):
-                    roll_no = roll_no[:-2]
-
-                try:
-                    student = Student.objects.get(roll_no=roll_no)
-                except Student.DoesNotExist:
-                    continue
-
-                for c in range(1,32):
-                    if c >=cols:
-                        break
-
-                    time_str = df.iloc[r+2, c]
-                    if pd.isna(time_str):
-                        continue
-
-                    try:
-                        times = str(time_str).split()
-                        if len(times) >= 1:
-                            in_time_str = times[0]
-                            out_time_str = times[1] if len(times) > 1 else "19:30"
-                            
-                            time_format = "%H:%M"
-                            time_in_dt = datetime.strptime(in_time_str, time_format)
-                            time_out_dt = datetime.strptime(out_time_str, time_format)
-                            
-                            time_in = time_in_dt.time()
-                            time_out = time_out_dt.time()
-                            
-                            duration = time_out_dt - time_in_dt
-                            hours = duration.total_seconds() / 3600
-                            
-                            if hours < 0:
-                                hours = 0
-
-                            if hours > 12:
-                                hours = 12
-
-                            year_month = month.split('-')
-                            year = int(year_month[0])
-                            day = int(df.iloc[r+1, c])
-                            date_month = int(year_month[1])
-
-                            try:
-                                record_date = datetime(year, date_month, day).date()
-                            except ValueError:
-                                continue
-
-                            AttendanceRecord.objects.update_or_create(
-                                student=student,
-                                date=record_date,
-                                defaults={
-                                    'in_time': time_in,
-                                    'out_time': time_out,
-                                    'total_hours': hours
-                                }
-                            )
-                            records_created += 1
-                    
-                    except Exception as e:
-                        errors.append(f"row {r+2}, col {c}: {str(e)}")
-                        continue
-            if records_created > 0:
-                Notification.objects.bulk_create([
-                    Notification(
-                        recipient=s.user,
-                        message=f"Attendance for {month} has been uploaded.",
-                        notification_type='attendance'
-                    ) for s in Student.objects.select_related('user').all()
-                ])
-
-                messages.success(request,f"attendance uploaded successfully, processed {records_created} records.")
-            else:
-                messages.warning(request, "no attendance records were created.")
-            
-            return redirect('manager_dashboard')
+            job = AttendanceJob.objects.create(
+                created_by=request.user,
+                job_type=AttendanceJob.JOB_IMPORT,
+                month=month,
+                source_file=excel_file,
+            )
+            enqueue_attendance_job(job.id)
+            messages.success(request, "Attendance import queued. Refresh the page to watch status updates.")
+            return redirect('upload_attendance')
         
         except Exception as e:
             messages.error(request,f"error in processing file: {str(e)}")
             return redirect('upload_attendance')
         
-    return render(request, 'attendance/upload_attendance.html')
+    recent_jobs = AttendanceJob.objects.filter(job_type=AttendanceJob.JOB_IMPORT).order_by('-created_at')[:10]
+    return render(request, 'attendance/upload_attendance.html', {
+        'recent_jobs': recent_jobs,
+    })
 
 # this view attendence features requires only authenticated user whether it could be manager/student doesn't matter
 @login_required
 def view_attendance(request):
     if not (request.user.is_superuser or hasattr(request.user,'manager')):
         return redirect('student_dashboard')
-    
-    students = list(Student.objects.all())
-    
-    def sort_keys(s):
 
-        try:
-            return int(s.roll_no)
-        except ValueError:
-            return s.roll_no
+    students_qs = Student.objects.select_related('user', 'added_by').order_by('roll_no')
+    student_page = Paginator(students_qs, 25).get_page(request.GET.get('page'))
 
-    students.sort(key=sort_keys)
-    
     show_data = False
     start_date = None
     end_date = None
 
     try:
-        start_date, end_date, month_str = parse_attendance_range(request)
+        month_str = request.GET.get('month')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        start_date, end_date = parse_attendance_range(month_str, start_date_str, end_date_str)
         show_data = start_date is not None and end_date is not None
     except (ValidationError, ValueError):
         messages.error(request, "Invalid attendance date range.")
@@ -192,132 +81,73 @@ def view_attendance(request):
     attendance_data = []
 
     if show_data:
-        final_dates = end_date - start_date
-        for i in range(final_dates.days + 1):
-            date_list.append(start_date + timedelta(days=i))
+        date_list, attendance_data = build_attendance_summary(start_date, end_date, student_queryset=student_page.object_list)
 
-        records = AttendanceRecord.objects.filter(date__range=[start_date, end_date])
-        
-        records_by_student = defaultdict(dict)
-        for r in records:
-            records_by_student[r.student_id][r.date] = r
-
-        for student in students:
-            student_records = records_by_student.get(student.id, {})
-            
-            row_data = {
-                'student': student,
-                'daily_data': [], 
-                'total_hours': 0,
-                'days_present': 0
-            }
-            
-            for d in date_list:
-                record = student_records.get(d)
-                cell = {
-                    'date': d,
-                    'hours': 0,
-                    'status_color': 'white',
-                    'original_record': record 
-                }
-                
-                if record:
-                    h = float(record.total_hours)
-                    cell['hours'] = h
-                    if h > 0:
-                         row_data['total_hours'] += h
-                         row_data['days_present'] += 1
-                    if h >= 6.0:
-                        cell['status_color'] = '#4caf50'  
-                    elif h < 6.0:
-                        cell['status_color'] = '#f44336' 
-                
-                row_data['daily_data'].append(cell)
-                
-            attendance_data.append(row_data)
+    export_jobs = AttendanceJob.objects.filter(
+        job_type=AttendanceJob.JOB_EXPORT,
+        created_by=request.user,
+    ).order_by('-created_at')[:5]
 
     context = {
         'attendance_data': attendance_data,
+        'attendance_page': student_page,
         'date_list': date_list,
         'start_date': start_date,
         'end_date': end_date,
         'month_str': month_str,
         'show_data': show_data,
+        'export_jobs': export_jobs,
     }
     return render(request, 'attendance/view_attendance.html', context)
 
 # this download attendence feature also need only authenticated user
 @login_required
+@require_POST
 def download_attendance_report(request):
     if not (request.user.is_superuser or hasattr(request.user,'manager')):
         return redirect('student_dashboard')
-
-    students = list(Student.objects.all())
-    def sort_keys(s):
-        try: return int(s.roll_no)
-        except ValueError: return s.roll_no
-    students.sort(key=sort_keys)
+    month_str = request.POST.get('month')
+    start_date_str = request.POST.get('start_date')
+    end_date_str = request.POST.get('end_date')
 
     try:
-        start_date, end_date, month_str = parse_attendance_range(request)
+        start_date, end_date = parse_attendance_range(month_str, start_date_str, end_date_str)
     except (ValidationError, ValueError):
         messages.error(request, "Invalid attendance date range.")
         return redirect('view_attendance')
 
     if start_date is None or end_date is None:
-        current_date = datetime.now().date()
         last_record = AttendanceRecord.objects.order_by('-date').first()
         if last_record:
-            target_date = last_record.date
+            start_date = last_record.date.replace(day=1)
+            end_date = last_record.date
         else:
-            target_date = current_date
-        
-        start_date = target_date.replace(day=1)
-        last_day = calendar.monthrange(target_date.year, target_date.month)[1]
-        end_date = target_date.replace(day=last_day)
+            messages.error(request, "No attendance records are available to export.")
+            return redirect('view_attendance')
 
-    date_list = []
-    final_dates = end_date - start_date
-    for i in range(final_dates.days + 1):
-        date_list.append(start_date + timedelta(days=i))
-
-
-    records = AttendanceRecord.objects.filter(date__range=[start_date, end_date])
-    records_by_student = defaultdict(dict)
-    for r in records:
-        records_by_student[r.student_id][r.date] = r
+    job = AttendanceJob.objects.create(
+        created_by=request.user,
+        job_type=AttendanceJob.JOB_EXPORT,
+        start_date=start_date,
+        end_date=end_date,
+        month=month_str,
+    )
+    enqueue_attendance_job(job.id)
+    messages.success(request, "Attendance export queued. Refresh the page to watch status updates.")
+    return redirect('view_attendance')
 
 
-    attendance_data = []
-    for student in students:
-        student_records = records_by_student.get(student.id, {})
-        row_data = {
-            'student': student,
-            'daily_data': [], 
-            'total_hours': 0,
-            'days_present': 0
-        }
-        for d in date_list:
-            record = student_records.get(d)
-            cell = {'date': d, 'hours': 0, 'status_color': 'white'}
-            if record:
-                h = float(record.total_hours)
-                cell['hours'] = h
-                if h > 0:
-                     row_data['total_hours'] += h
-                     row_data['days_present'] += 1
-                if h >= 6.0: 
-                    cell['status_color'] = '#4caf50' 
-                else: 
-                    cell['status_color'] = '#f44336' 
-            
-            row_data['daily_data'].append(cell)
-        attendance_data.append(row_data)
+@login_required
+def download_attendance_job_file(request, job_id):
+    if not (request.user.is_superuser or hasattr(request.user,'manager')):
+        return redirect('student_dashboard')
 
+    job = get_object_or_404(AttendanceJob, id=job_id, job_type=AttendanceJob.JOB_EXPORT)
+    if job.status != AttendanceJob.STATUS_COMPLETED or not job.output_file:
+        messages.error(request, "That export is not ready yet.")
+        return redirect('view_attendance')
 
-    pdf_buffer = generate_attendance_pdf(attendance_data, date_list, start_date, end_date)
-    
-    return FileResponse(pdf_buffer, as_attachment=True, filename=f"Attendance_Report_{start_date}_{end_date}.pdf")
+    return FileResponse(job.output_file.open('rb'), as_attachment=True, filename=os.path.basename(job.output_file.name))
 
 # this also need authenticated user
 @login_required
@@ -333,7 +163,10 @@ def student_view_attendance(request):
     end_date = None
 
     try:
-        start_date, end_date, month_str = parse_attendance_range(request)
+        month_str = request.GET.get('month')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        start_date, end_date = parse_attendance_range(month_str, start_date_str, end_date_str)
         show_data = start_date is not None and end_date is not None
     except (ValidationError, ValueError):
         messages.error(request, "Invalid attendance date range.")
@@ -343,32 +176,7 @@ def student_view_attendance(request):
     attendance_data = []
 
     if show_data:
-
-        final_dates = end_date - start_date
-        for i in range(final_dates.days + 1):
-            date_list.append(start_date + timedelta(days=i))
-
-        records = AttendanceRecord.objects.filter(student=student, date__range=[start_date, end_date])
-        records_by_date = {r.date: r for r in records}
-        daily_data = []
-        total_hours = 0
-        days_present = 0
-
-        for d in date_list:
-            record = records_by_date.get(d)
-            cell = {'date': d, 'hours': 0, 'status_color': 'white'}
-            if record:
-                h = float(record.total_hours)
-                cell['hours'] = h
-                if h > 0:
-                    total_hours += h
-                    days_present += 1
-
-                if h >= 6.0: 
-                    cell['status_color'] = '#4caf50'  
-                else: 
-                    cell['status_color'] = '#f44336'  
-            daily_data.append(cell)
+        date_list, daily_data, total_hours, days_present = build_student_attendance_summary(student, start_date, end_date)
 
         attendance_data = [{
             'student': student,

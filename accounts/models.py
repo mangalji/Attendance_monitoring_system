@@ -73,6 +73,11 @@ class Student(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.roll_no} ({self.domain})"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['roll_no'], name='student_roll_no_idx'),
+        ]
     
 
 class Parent(models.Model):
@@ -116,3 +121,17 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient.email} - {self.notification_type}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['recipient', '-created_at'], name='notification_rec_created_idx'),
+        ]
+
+
+class ActiveSession(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='active_session')
+    session_key = models.CharField(max_length=40, unique=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user_id}:{self.session_key}"

@@ -3,11 +3,18 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
-from .models import Student, Manager, Parent, Notification
+from django.core.paginator import Paginator
+from django.core.cache import cache
+from .models import Student, Manager, Parent, Notification, ActiveSession
 from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfEditForm
 from .decorators import manager_required, student_required
-from django.contrib.sessions.models import Session
 from django.views.decorators.http import require_POST
+
+
+def paginate(request, queryset, per_page=25):
+    paginator = Paginator(queryset, per_page)
+    page_number = request.GET.get('page')
+    return paginator.get_page(page_number)
 
 # our first view for user login
 def user_login(request):
@@ -27,17 +34,10 @@ def user_login(request):
         # here i check the user is exists
         if user:
             login(request,user)
-
-            # here i check the current user's another session is exists or not
-            current_session_key = request.session.session_key
-            for session in Session.objects.all():
-                try:
-                    data = session.get_decoded()
-                    if data.get('_auth_user_id') == str(user.id) and session.session_key != current_session_key:
-                        session.delete()
-                # here i pass the any exceptions
-                except:
-                    pass
+            ActiveSession.objects.update_or_create(
+                user=user,
+                defaults={'session_key': request.session.session_key},
+            )
             
             # now i check the user's permission:
 
@@ -73,6 +73,8 @@ def user_login(request):
 # this method requires authenticated users
 @login_required
 def user_logout(request):
+    if hasattr(request.user, 'active_session'):
+        request.user.active_session.delete()
     logout(request)
     return redirect('login')
 
@@ -80,7 +82,16 @@ def user_logout(request):
 @login_required
 @manager_required
 def manager_dashboard(request):
-    return render(request,'manager/dashboard.html')
+    dashboard_counts = cache.get_or_set(
+        'manager-dashboard-counts',
+        lambda: {
+            'students': Student.objects.count(),
+            'managers': Manager.objects.count(),
+            'notifications': Notification.objects.count(),
+        },
+        300,
+    )
+    return render(request,'manager/dashboard.html', dashboard_counts)
 
 # this is for adding the students
 @login_required
@@ -133,8 +144,9 @@ def add_student(request):
 @login_required
 @manager_required
 def view_students(request):
-    students = Student.objects.select_related('user')
-    return render(request,'manager/view_student.html',{'students':students})
+    students_qs = Student.objects.select_related('user', 'added_by').order_by('roll_no')
+    students = paginate(request, students_qs, per_page=25)
+    return render(request,'manager/view_student.html',{'students':students, 'page_obj': students})
 
 @login_required
 @manager_required
@@ -170,7 +182,11 @@ def reset_student_password(request,pk):
 @login_required
 @student_required
 def student_dashboard(request):
-    student = get_object_or_404(Student,user=request.user)
+    student = cache.get_or_set(
+        f'student-dashboard:{request.user.id}',
+        lambda: Student.objects.select_related('user', 'added_by').get(user=request.user),
+        300,
+    )
     return render(request,'student/dashboard.html',{
         'student':student
     })
@@ -245,10 +261,12 @@ def delete_student(request,pk):
 
 @login_required
 def notification_view(request):
-    notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
-    unread_count = notifications.filter(is_read = False).count()
+    notifications_qs = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+    notifications = paginate(request, notifications_qs, per_page=20)
+    unread_count = notifications_qs.filter(is_read = False).count()
     return render(request,'student/notifications.html',{
         'notifications':notifications,
+        'page_obj': notifications,
         'unread_count':unread_count
     })
 

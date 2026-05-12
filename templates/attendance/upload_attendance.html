@@ -23,4 +23,15 @@
     <button type="submit">Upload & Process</button>
 </form>
 
+<div style="margin-top: 24px;">
+    <h4>Recent Import Jobs</h4>
+    <ul>
+        {% for job in recent_jobs %}
+        <li>{{ job.created_at|date:"d M Y H:i" }} - {{ job.status }} - {{ job.records_processed }} records</li>
+        {% empty %}
+        <li>No import jobs yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+
 {% endblock %}

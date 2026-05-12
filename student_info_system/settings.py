@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'accounts.middleware.SessionTimeoutMiddleware',
+    'accounts.middleware.SingleSessionMiddleware',
 ]
 
 ROOT_URLCONF = 'student_info_system.urls'
@@ -78,7 +79,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
         },
-i    },
+    },
 ]
 
 WSGI_APPLICATION = 'student_info_system.wsgi.application'
@@ -89,12 +90,15 @@ WSGI_APPLICATION = 'student_info_system.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': django.db.backends.mysql,
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get("NAME"),
         'HOST' : os.environ.get("HOST"),
         'USER' : os.environ.get("USER"),
         'PASSWORD' : os.environ.get("PASSWORD"),
-        'PORT' : os.environ.get("PORT")
+        'PORT' : os.environ.get("PORT"),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
 }
 
@@ -135,8 +139,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = os.environ.get("MEDIA_URL", "/media/")
+MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", BASE_DIR / 'media'))
 AUTH_USER_MODEL = 'accounts.User'
 
 

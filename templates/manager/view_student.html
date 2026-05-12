@@ -60,6 +60,17 @@
     </tr>
     {% endfor %}
 </table>
+{% if students.has_other_pages %}
+<div style="margin-top: 15px;">
+    {% if students.has_previous %}
+    <a href="?page={{ students.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span style="margin: 0 10px;">Page {{ students.number }} of {{ students.paginator.num_pages }}</span>
+    {% if students.has_next %}
+    <a href="?page={{ students.next_page_number }}">Next</a>
+    {% endif %}
+</div>
+{% endif %}
 <button><a href="{% url 'manager_dashboard' %}">Back</a></button>
 
 {% endblock %}

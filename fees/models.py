@@ -31,3 +31,8 @@ class FeeRecord(models.Model):
     @property
     def remaining_fees(self):
         return self.total_fees - self.paid_fees
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['student'], name='fee_student_idx'),
+        ]
