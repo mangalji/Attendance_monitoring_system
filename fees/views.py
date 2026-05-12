@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from accounts.decorators import manager_required, student_required
 from accounts.models import Student, Notification
 from .models import FeeRecord
+from django.views.decorators.http import require_POST
 
 @login_required
 def fee_manager(request):
@@ -28,40 +29,39 @@ def fee_manager(request):
     return render(request, 'fees/fee_manager.html', {'students': students})
 
 @login_required
+@require_POST
 def update_fee(request, student_id):
     if not (request.user.is_superuser or hasattr(request.user,'manager')):
         return redirect('student_dashboard')
 
-    if request.method == 'POST':
-        try:
-            student = Student.objects.get(id=student_id)
-            fee_record, created = FeeRecord.objects.get_or_create(student=student)
-            
-            fee_record.total_fees = float(request.POST.get('total_fees', 0) or 0)
-            fee_record.paid_fees = float(request.POST.get('paid_fees', 0) or 0)
-            
-           
-            for i in range(1, 5):
-                file_key = f'installment_{i}'
-                if file_key in request.FILES:
+    try:
+        student = Student.objects.get(id=student_id)
+        fee_record, created = FeeRecord.objects.get_or_create(student=student)
+        
+        fee_record.total_fees = float(request.POST.get('total_fees', 0) or 0)
+        fee_record.paid_fees = float(request.POST.get('paid_fees', 0) or 0)
+        
+        for i in range(1, 5):
+            file_key = f'installment_{i}'
+            if file_key in request.FILES:
+                setattr(fee_record, file_key, request.FILES[file_key])
+        
+        fee_record.save()
 
-                    setattr(fee_record, file_key, request.FILES[file_key])
-            
-            fee_record.save()
+        Notification.objects.create(
+            recipient = student.user,
+            message = f"your fees record has been updated. total paid fees: ₹{fee_record.paid_fees}",
+            notification_type = 'fees'
+        )
 
-            Notification.objects.create(
-                recipient = student.user,
-                message = f"your fees record has been updated. total paid fees: ₹{fee_record.paid_fees}",
-                notification_type = 'fees'
-            )
-
-            messages.success(request, f"fees and receipts updated for {student.user.first_name}")
-        except Exception as e:
-            messages.error(request, f"error updating fees: {str(e)}")
+        messages.success(request, f"fees and receipts updated for {student.user.first_name}")
+    except Exception as e:
+        messages.error(request, f"error updating fees: {str(e)}")
         
     return redirect('fee_manager')
 
 @login_required
+@require_POST
 def send_fee_reminder(request,student_id):
     if not(request.user.is_superuser or hasattr(request.user, 'manager')):
         return redirect('student_dashboard')

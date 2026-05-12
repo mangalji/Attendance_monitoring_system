@@ -1,16 +1,17 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from accounts.models import Student
+from accounts.validators import validate_pdf_file
 
 class FeeRecord(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='fee_record')
     total_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     paid_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     
-    installment_1 = models.FileField(upload_to='receipts/', null=True, blank=True)
-    installment_2 = models.FileField(upload_to='receipts/', null=True, blank=True)
-    installment_3 = models.FileField(upload_to='receipts/', null=True, blank=True)
-    installment_4 = models.FileField(upload_to='receipts/', null=True, blank=True)
+    installment_1 = models.FileField(upload_to='receipts/', null=True, blank=True, validators=[validate_pdf_file])
+    installment_2 = models.FileField(upload_to='receipts/', null=True, blank=True, validators=[validate_pdf_file])
+    installment_3 = models.FileField(upload_to='receipts/', null=True, blank=True, validators=[validate_pdf_file])
+    installment_4 = models.FileField(upload_to='receipts/', null=True, blank=True, validators=[validate_pdf_file])
 
     def clean(self):
         if self.total_fees < 0:

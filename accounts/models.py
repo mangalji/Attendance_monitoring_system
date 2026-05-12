@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from .validators import validate_image_file
 
 DOMAIN_CHOICES = [
         ("Web Developer","Web Developer"),
@@ -65,7 +66,7 @@ class Student(models.Model):
     # domain = models.CharField(max_length=50,blank=True,null=True)
     domain = models.CharField(max_length=20,choices=DOMAIN_CHOICES,default="Web Developer")
     joining_date = models.DateField(blank=True,null=True,validators=[validate_not_future])
-    photo = models.ImageField(upload_to='student_photos/',blank=True,null=True)
+    photo = models.ImageField(upload_to='student_photos/',blank=True,null=True, validators=[validate_image_file])
     is_active = models.BooleanField(default=True)
     added_by = models.ForeignKey(Manager, on_delete=models.SET_NULL,null=True,blank=True)
     is_placed = models.BooleanField(default=False)

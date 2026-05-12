@@ -46,7 +46,7 @@ class FeeViewTests(TestCase):
         student = Student.objects.get(roll_no=1)
         url = reverse('update_fee', kwargs={'student_id': student.id})
 
-        pdf_content = b"pdf content"
+        pdf_content = b"%PDF-1.4\n% test receipt\n"
         pdf_file = SimpleUploadedFile("receipt.pdf", pdf_content, content_type="application/pdf")
 
         data = {

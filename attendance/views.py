@@ -4,15 +4,48 @@ from django.contrib.auth.decorators import login_required
 from accounts.decorators import manager_required
 from .models import AttendanceRecord
 from accounts.models import Student, Notification
+from django.core.exceptions import ValidationError
 import pandas as pd
 from datetime import datetime, time, timedelta
-import os
-from django.db.models import Prefetch
 import calendar
 from collections import defaultdict
 from django.http import FileResponse
 from .utils import generate_attendance_pdf
-from django.core.files.storage import default_storage
+
+MAX_ATTENDANCE_REPORT_DAYS = 92
+
+def validate_excel_file(uploaded_file):
+    max_size = 5 * 1024 * 1024
+    allowed_extensions = ('.xlsx', '.xls')
+
+    if uploaded_file.size > max_size:
+        raise ValidationError("Attendance file size cannot exceed 5 MB.")
+    if not uploaded_file.name.lower().endswith(allowed_extensions):
+        raise ValidationError("Only Excel files (.xlsx, .xls) are allowed.")
+
+def parse_attendance_range(request):
+    current_date = datetime.now().date()
+    month_str = request.GET.get('month')
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+
+    if start_date_str and end_date_str:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+    elif month_str:
+        year, month = map(int, month_str.split('-'))
+        start_date = datetime(year, month, 1).date()
+        last_day = calendar.monthrange(year, month)[1]
+        end_date = datetime(year, month, last_day).date()
+    else:
+        return None, None, month_str
+
+    if end_date < start_date:
+        raise ValidationError("End date cannot be before start date.")
+    if (end_date - start_date).days + 1 > MAX_ATTENDANCE_REPORT_DAYS:
+        raise ValidationError(f"Date range cannot exceed {MAX_ATTENDANCE_REPORT_DAYS} days.")
+
+    return start_date, end_date, month_str
 
 # this is views is for uplaoding the attendence
 @login_required             # it means this feature available for only authenticated user
@@ -27,6 +60,7 @@ def upload_attendance(request):
             return redirect('upload_attendance')
 
         try:
+            validate_excel_file(excel_file)
             df = pd.read_excel(excel_file,header=None)
             rows, cols = df.shape
             start_row = 4
@@ -89,7 +123,6 @@ def upload_attendance(request):
                             try:
                                 record_date = datetime(year, date_month, day).date()
                             except ValueError:
-                                print(f"Invalid date: {year}-{date_month}-{day}")
                                 continue
 
                             AttendanceRecord.objects.update_or_create(
@@ -105,9 +138,7 @@ def upload_attendance(request):
                     
                     except Exception as e:
                         errors.append(f"row {r+2}, col {c}: {str(e)}")
-                        print(f"Error parsing cell {r+2},{c}: {e}")
                         continue
-            students_count = Student.objects.count()
             if records_created > 0:
                 Notification.objects.bulk_create([
                     Notification(
@@ -120,9 +151,6 @@ def upload_attendance(request):
                 messages.success(request,f"attendance uploaded successfully, processed {records_created} records.")
             else:
                 messages.warning(request, "no attendance records were created.")
-            
-            if errors:
-                print(f"errors: {errors}")
             
             return redirect('manager_dashboard')
         
@@ -138,10 +166,6 @@ def view_attendance(request):
     if not (request.user.is_superuser or hasattr(request.user,'manager')):
         return redirect('student_dashboard')
     
-    current_date = datetime.now().date()
-    month_str = request.GET.get('month') 
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
     students = list(Student.objects.all())
     
     def sort_keys(s):
@@ -157,17 +181,12 @@ def view_attendance(request):
     start_date = None
     end_date = None
 
-    if start_date_str and end_date_str:
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-        show_data = True
-    elif month_str:
-        year, month_val = map(int, month_str.split('-'))
-        print(year,"--",month_val)
-        start_date = datetime(year, month_val, 1).date()
-        last_day = calendar.monthrange(year, month_val)[1]
-        end_date = datetime(year, month_val, last_day).date()
-        show_data = True
+    try:
+        start_date, end_date, month_str = parse_attendance_range(request)
+        show_data = start_date is not None and end_date is not None
+    except (ValidationError, ValueError):
+        messages.error(request, "Invalid attendance date range.")
+        return redirect('view_attendance')
 
     date_list = []
     attendance_data = []
@@ -230,10 +249,8 @@ def view_attendance(request):
 # this download attendence feature also need only authenticated user
 @login_required
 def download_attendance_report(request):
-    current_date = datetime.now().date()
-    month_str = request.GET.get('month')
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
+    if not (request.user.is_superuser or hasattr(request.user,'manager')):
+        return redirect('student_dashboard')
 
     students = list(Student.objects.all())
     def sort_keys(s):
@@ -241,15 +258,14 @@ def download_attendance_report(request):
         except ValueError: return s.roll_no
     students.sort(key=sort_keys)
 
-    if start_date_str and end_date_str:
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-    elif month_str:
-        year, month = map(int, month_str.split('-'))
-        start_date = datetime(year, month, 1).date()
-        last_day = calendar.monthrange(year, month)[1]
-        end_date = datetime(year, month, last_day).date()
-    else:
+    try:
+        start_date, end_date, month_str = parse_attendance_range(request)
+    except (ValidationError, ValueError):
+        messages.error(request, "Invalid attendance date range.")
+        return redirect('view_attendance')
+
+    if start_date is None or end_date is None:
+        current_date = datetime.now().date()
         last_record = AttendanceRecord.objects.order_by('-date').first()
         if last_record:
             target_date = last_record.date
@@ -312,25 +328,16 @@ def student_view_attendance(request):
         messages.error(request, "Student profile not found.")
         return redirect('student_dashboard')
 
-    current_date = datetime.now().date()
-    month_str = request.GET.get('month')
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
-
     show_data = False
     start_date = None
     end_date = None
 
-    if start_date_str and end_date_str:
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-        show_data = True
-    elif month_str:
-        year, month = map(int, month_str.split('-'))
-        start_date = datetime(year, month, 1).date()
-        last_day = calendar.monthrange(year, month)[1]
-        end_date = datetime(year, month, last_day).date()
-        show_data = True
+    try:
+        start_date, end_date, month_str = parse_attendance_range(request)
+        show_data = start_date is not None and end_date is not None
+    except (ValidationError, ValueError):
+        messages.error(request, "Invalid attendance date range.")
+        return redirect('student_view_attendance')
 
     date_list = []
     attendance_data = []

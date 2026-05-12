@@ -66,7 +66,7 @@ class ManagerTests(TestCase):
             'student_user-email': 'test@student.com',
             'student_user-password': 'Password@123',
             'profile-roll_no': '1',
-            'profile-phone': '1231231234',
+            'profile-phone': '8123456790',
             'profile-dob': '2002-01-01',
             'profile-joining_date': '2024-01-01',
             'profile-domain': 'BackEnd Developer',
@@ -103,8 +103,8 @@ class StudentTests(TestCase):
     def test_student_profile_edit(self):
         url = reverse('edit_student_profile')
         data = {
-            'phone': '9999999999',
+            'phone': '8123456790',
         }
         response = self.client.post(url, data)
         self.student.refresh_from_db()
-        self.assertEqual(self.student.phone, '9999999999')
+        self.assertEqual(self.student.phone, '8123456790')

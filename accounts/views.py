@@ -4,9 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
 from .models import Student, Manager, Parent, Notification
-from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfEditForm, StudentForgotPasswordForm
+from .forms import StudentUserForm, StudentProfileForm, ParentForm, StudentSelfEditForm
 from .decorators import manager_required, student_required
 from django.contrib.sessions.models import Session
+from django.views.decorators.http import require_POST
 
 # our first view for user login
 def user_login(request):
@@ -22,9 +23,6 @@ def user_login(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         user = authenticate(request,username=email,password=password)
-        print(email)
-        print(password)
-        print(user)
 
         # here i check the user is exists
         if user:
@@ -33,12 +31,8 @@ def user_login(request):
             # here i check the current user's another session is exists or not
             current_session_key = request.session.session_key
             for session in Session.objects.all():
-                print(session)
-
-                # here i use error handling here
                 try:
                     data = session.get_decoded()
-                    print(data)
                     if data.get('_auth_user_id') == str(user.id) and session.session_key != current_session_key:
                         session.delete()
                 # here i pass the any exceptions
@@ -97,11 +91,8 @@ def add_student(request):
 
     if request.method == 'POST':
         student_user_form = StudentUserForm(request.POST,prefix='student_user')
-        print(student_user_form)
         student_profile_form = StudentProfileForm(request.POST,request.FILES,prefix='profile')
-        print(student_profile_form)
         student_parent_form = ParentForm(request.POST,prefix='parent')
-        print(student_parent_form)
 
         # if the user details is valid that user will be saved
         if student_user_form.is_valid() and student_profile_form.is_valid() and student_parent_form.is_valid():
@@ -111,7 +102,6 @@ def add_student(request):
 
             student_profile = student_profile_form.save(commit=False)
             student_profile.user = student_user
-            print(student_profile)
             student_profile.added_by = manager
             student_profile.save()
 
@@ -150,7 +140,6 @@ def view_students(request):
 @manager_required
 def student_detail(request,pk):
     student = get_object_or_404(Student,pk=pk)
-    print(student)
     return render(request,'manager/student_detail.html',{'student':student})
     
 @login_required
@@ -159,7 +148,6 @@ def reset_student_password(request,pk):
     student = get_object_or_404(Student,pk=pk)
     if request.method == 'POST':
         new_password = request.POST.get('new_password')
-        print(new_password)
         if new_password:
             try:
                 from django.contrib.auth.password_validation import validate_password
@@ -265,27 +253,9 @@ def notification_view(request):
     })
 
 @login_required
+@require_POST
 def mark_notification_as_read(request, pk):
     notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
     notification.is_read = True
     notification.save()
     return redirect('notification_view')
-
-
-def student_forget_password(request):
-
-    if request.method == 'POST':
-        form  = StudentForgotPasswordForm(request.POST)
-        if form.is_valid():
-            student = form.cleaned_data['student']
-            password = form.cleaned_data['new_password']
-            user = student.user
-            user.set_password(password)
-            user.save()
-
-            messages.success(request, "password resets successfullly, you can now login with your new password")
-            return redirect('login')
-    else:
-        form = StudentForgotPasswordForm()
-
-    return render(request, 'student/forgot_password.html', {'form': form})

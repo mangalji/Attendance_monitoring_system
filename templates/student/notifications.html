@@ -18,7 +18,10 @@
                     </p>
                 </div>
                 {% if not notification.is_read %}
-                <a href="{% url 'mark_notification_as_read' notification.pk %}" class="read-btn">Mark as read</a>
+                <form method="post" action="{% url 'mark_notification_as_read' notification.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="read-btn">Mark as read</button>
+                </form>
                 {% endif %}
             </div>
         </li>

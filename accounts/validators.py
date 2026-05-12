@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from PIL import Image, UnidentifiedImageError
 import re
 import datetime
 
@@ -86,4 +87,36 @@ def validate_pincode(value):
 def validate_date_not_in_future(value):
     if value and value > datetime.date.today():
         raise ValidationError("date cannot be in future.")
+    return value
+
+def validate_pdf_file(value):
+    max_size = 5 * 1024 * 1024
+    if value.size > max_size:
+        raise ValidationError("PDF file size cannot exceed 5 MB.")
+    if not value.name.lower().endswith(".pdf"):
+        raise ValidationError("Only PDF files are allowed.")
+
+    position = value.tell()
+    header = value.read(4)
+    value.seek(position)
+    if header != b"%PDF":
+        raise ValidationError("Uploaded file is not a valid PDF.")
+    return value
+
+def validate_image_file(value):
+    max_size = 2 * 1024 * 1024
+    if value.size > max_size:
+        raise ValidationError("Image file size cannot exceed 2 MB.")
+
+    try:
+        position = value.tell()
+        image = Image.open(value)
+        image.verify()
+        value.seek(position)
+    except (UnidentifiedImageError, OSError):
+        raise ValidationError("Uploaded file is not a valid image.")
+
+    allowed_formats = {"JPEG", "PNG", "WEBP"}
+    if image.format not in allowed_formats:
+        raise ValidationError("Only JPEG, PNG, or WebP images are allowed.")
     return value
